@@ -4,6 +4,7 @@ import LayoutView from "@/components/high-level/layout-view";
 import CustomText from "@/components/high-level/custom-text";
 import { Colors } from "@/constants/colors";
 import CustomTouchableOpacity from "@/components/high-level/custom-touchable-opacity";
+import CustomImage from "@/components/high-level/custom-image";
 
 const CATEGORIES = [
   {
@@ -48,7 +49,7 @@ export default function CustomerAnaSayfa() {
       >
         <View style={styles.headerBlock}>
           <View style={styles.headerTitle}>
-            <Image source={require("../../assets/logo.png")} style={styles.headerLogo} resizeMode="contain" />
+            <CustomImage uri={require("../../assets/logo1.png")} isLocalFile style={styles.headerLogo} contentFit="contain" />
             <CustomText usePrimaryColor semibold lg>
               BuRandevu
             </CustomText>
@@ -96,7 +97,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   card: {
-    height: 150,
+    height: 180,
     borderRadius: 20,
     marginBottom: 16,
     overflow: "hidden",
@@ -113,7 +114,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(0,0,0,0.3)",
   },
   cardLabel: {
     letterSpacing: 2,
