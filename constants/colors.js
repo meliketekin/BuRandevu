@@ -2,6 +2,12 @@
  * Uygulama genelinde kullanılan renk paleti.
  */
 export const Colors = {
+  BrandPrimary: "#141414",
+  BrandBackground: "#f7f7f7",
+  BrandBackgroundDark: "#191919",
+  BrandGold: "#FFC107",
+
+
   Background: "#ffffff",
   BorderColor: "#e5e5e5",
   TextColor: "#1E232C",
@@ -16,10 +22,7 @@ export const Colors = {
   InputInner: "#8F959E",
   DisabledColor: "#C4C8CC",
   Black: "#000000",
-  // BuRandevu marka renkleri
-  BrandBackground: "#EAEFFE",
-  BrandPrimary: "#9787F3",
-  BrandDark: "#2D274B",
+
   // Input
   InputBackground: "#ffffff",
   InputBorderColor: "#e5e5e5",

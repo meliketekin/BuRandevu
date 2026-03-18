@@ -36,7 +36,7 @@ const CustomButton = ({
     <CustomTouchableOpacity style={contentStyle} loading={loading} onDisabled={disabled} onPress={onPress}>
       <View style={[_style, style]}>
         {loading ? (
-          <ActivityIndicator size="small" color={colors.Background} />
+          <ActivityIndicator size="small" color={Colors.BrandBackground} />
         ) : (
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             {leftIcon}
@@ -45,7 +45,7 @@ const CustomButton = ({
               style={{ maxWidth: "100%", ...titleStyle }}
               fontSize={fontSize}
               semibold
-              color={fontColor ? fontColor : whiteBg ? colors.TextColor : "#fff"}
+              color={fontColor ? fontColor : whiteBg ? Colors.BrandPrimary : "#fff"}
               marginLeft={leftIcon}
             >
               {title}
