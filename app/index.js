@@ -1,90 +1,194 @@
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Pressable, StyleSheet, ImageBackground } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Shadow } from "react-native-shadow-2";
 import { router } from "expo-router";
-import { openModal, ModalTypeEnum } from "../components/high-level/modal-renderer";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import CustomText from "@/components/high-level/custom-text";
+import { Colors } from "@/constants/colors";
 
-export default function Index() {
-  const openExampleModal = () => {
-    openModal(ModalTypeEnum.ConfirmModal, {
-      title: "Modal örneği",
-      message: "Bu onay kutusu modal renderer ile açıldı. Tamam veya İptal ile kapatabilirsin.",
-      confirmText: "Tamam",
-      cancelText: "İptal",
-      onConfirm: () => console.log("Tamam seçildi"),
-      onCancel: () => console.log("İptal seçildi"),
-    });
-  };
+const BG_IMAGE = {
+  uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuDzCOY3m8-vEuUBhaK82MUkuih6BfbKPaifT-hElEoPmmqrszRU-KrmVbbFESMejyjGIz605Vc6dwDd7uAgfw-upw-BmkiuGT3robgse6WnCqI0j9NbQAq3Kw3v9tI95kS_8uQP7N3d69gDF8q6ipHSy_ayQTHa21KjUn2j9D-9lhibovpDSxj2a7JXA9bPA0yzRy97I1HmiScwG0l-fEmBc82akKk6t6HGkMklLt1trmpTjnvoq44AB_CSf7OK0saL_mA0AyatHUE",
+};
+
+export default function Onboarding() {
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>BuRandevu</Text>
-      <Pressable style={styles.buttonOutlined} onPress={openExampleModal}>
-        <Text style={styles.buttonOutlinedText}>Modal örneği aç</Text>
-      </Pressable>
-      <Pressable
-        style={styles.button}
-        onPress={() => router.push("/auth/login")}
-      >
-        <Text style={styles.buttonText}>Giriş yap</Text>
-      </Pressable>
-      <Pressable
-        style={styles.button}
-        onPress={() => router.push("/auth/register")}
-      >
-        <Text style={styles.buttonText}>Kayıt ol</Text>
-      </Pressable>
-      <Text style={styles.divider}>veya hesap türüne göre devam et</Text>
-      <Pressable
-        style={styles.buttonOutlined}
-        onPress={() => router.replace("/customer")}
-      >
-        <Text style={styles.buttonOutlinedText}>Customer olarak devam</Text>
-      </Pressable>
-      <Pressable
-        style={styles.buttonOutlined}
-        onPress={() => router.replace("/admin")}
-      >
-        <Text style={styles.buttonOutlinedText}>Admin olarak devam</Text>
-      </Pressable>
-    </View>
+    <ImageBackground source={BG_IMAGE} style={styles.root} resizeMode="cover">
+
+      {/* Aşağıdan texte kadar smooth gradient */}
+      <LinearGradient
+        colors={["transparent", "rgba(0,0,0,0.55)", "rgba(0,0,0,0.88)", "rgba(0,0,0,0.97)"]}
+        locations={[0, 0.38, 0.65, 1]}
+        style={styles.bottomGradient}
+      />
+
+      {/* Content */}
+      <View style={[styles.content, { paddingBottom: insets.bottom + 48, paddingTop: insets.top }]}>
+        {/* Branding */}
+        <View style={styles.branding}>
+          <CustomText bold style={styles.title}>
+            BuRandevu
+          </CustomText>
+          <View style={styles.subtitleRow}>
+            <View style={styles.subtitleLine} />
+            <CustomText light style={styles.subtitle}>
+              Lüks Bakımın Yeni Adresi
+            </CustomText>
+          </View>
+        </View>
+
+        {/* Actions */}
+        <View style={styles.actions}>
+          {/* Primary: Hesap Oluştur */}
+          <Shadow
+            distance={22}
+            startColor="#CCA83055"
+            endColor="#CCA83000"
+            offset={[0, 8]}
+            style={styles.shadowContainer}
+          >
+            <Pressable
+              style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
+              onPress={() => router.push("/auth/register")}
+            >
+              <CustomText bold style={styles.primaryButtonText}>
+                Hesap Oluştur
+              </CustomText>
+              <Ionicons name="arrow-forward" size={20} color={Colors.BrandPrimary} />
+            </Pressable>
+          </Shadow>
+
+          {/* Secondary: Giriş Yap */}
+          <Pressable
+            style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
+            onPress={() => router.push("/auth/login")}
+          >
+            <CustomText bold style={styles.secondaryButtonText}>
+              Giriş Yap
+            </CustomText>
+          </Pressable>
+
+          {/* Tertiary: Misafir */}
+          <View style={styles.guestRow}>
+            <Pressable
+              style={({ pressed }) => [styles.guestButton, pressed && { opacity: 1 }]}
+              onPress={() => router.replace("/customer")}
+            >
+              <CustomText style={styles.guestText}>
+                Misafir Olarak Devam Et
+              </CustomText>
+              <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.5)" />
+            </Pressable>
+          </View>
+        </View>
+
+      </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    justifyContent: "center",
+    backgroundColor: Colors.BrandPrimary,
+  },
+  bottomGradient: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: "70%",
+    zIndex: 1,
+  },
+  content: {
+    flex: 1,
+    zIndex: 2,
+    justifyContent: "flex-end",
+    paddingHorizontal: 32,
+  },
+  branding: {
+    marginBottom: 48,
+    gap: 16,
+  },
+  title: {
+    fontSize: 64,
+    lineHeight: 68,
+    color: Colors.White,
+    letterSpacing: -2,
+  },
+  subtitleRow: {
+    flexDirection: "row",
     alignItems: "center",
     gap: 12,
   },
-  title: {
-    fontSize: 24,
-    marginBottom: 24,
+  subtitleLine: {
+    width: 40,
+    height: 1,
+    flexShrink: 0,
+    backgroundColor: "rgba(233,195,73,0.6)",
   },
-  divider: {
-    marginTop: 16,
-    marginBottom: 8,
-    color: "#666",
-    fontSize: 14,
+  subtitle: {
+    fontSize: 15,
+    color: "rgba(243,243,243,0.85)",
+    letterSpacing: 1.5,
+    flexShrink: 1,
   },
-  button: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    backgroundColor: "#007AFF",
-    borderRadius: 8,
+  actions: {
+    gap: 14,
+    marginBottom: 28,
   },
-  buttonText: {
-    color: "#fff",
+  shadowContainer: {
+    width: "100%",
+    borderRadius: 999,
+  },
+  primaryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: Colors.Gold,
+    borderRadius: 999,
+    paddingHorizontal: 32,
+    paddingVertical: 20,
+    width: "100%",
+  },
+  primaryButtonText: {
     fontSize: 16,
+    color: Colors.BrandPrimary,
+    letterSpacing: 0.3,
   },
-  buttonOutlined: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+  secondaryButton: {
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#007AFF",
-    borderRadius: 8,
+    borderColor: "rgba(255,255,255,0.2)",
+    paddingHorizontal: 32,
+    paddingVertical: 20,
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.07)",
   },
-  buttonOutlinedText: {
-    color: "#007AFF",
+  secondaryButtonText: {
     fontSize: 16,
+    color: Colors.White,
+    letterSpacing: 0.3,
+  },
+  guestRow: {
+    paddingTop: 12,
+    alignItems: "center",
+  },
+  guestButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    opacity: 0.55,
+  },
+  guestText: {
+    fontSize: 12,
+    color: Colors.White,
+    letterSpacing: 2,
+    textTransform: "uppercase",
+  },
+  pressed: {
+    transform: [{ scale: 0.97 }],
   },
 });
