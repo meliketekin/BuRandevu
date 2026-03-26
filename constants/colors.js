@@ -6,6 +6,10 @@ export const Colors = {
   BrandBackground: "#f7f7f7",
   BrandBackgroundDark: "#191919",
   BrandGold: "#FFC107",
+  Gold: "#D4AF37",
+
+  InputSurface: "#F5F5F5",
+  SegmentBackground: "#F0F0F0",
 
 
   Background: "#ffffff",

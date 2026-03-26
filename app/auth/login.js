@@ -1,173 +1,281 @@
 import { useCallback, useState } from "react";
-import { View, Pressable, StyleSheet, Keyboard, TouchableWithoutFeedback } from "react-native";
+import { View, Pressable, StyleSheet, Keyboard, TouchableWithoutFeedback, TextInput } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import LayoutView from "@/components/high-level/layout-view";
 import CustomText from "@/components/high-level/custom-text";
-import CustomButton from "@/components/high-level/custom-button";
-import CustomImage from "@/components/high-level/custom-image";
 import { Colors } from "@/constants/colors";
-import CustomInput from "@/components/high-level/custom-input";
-import CustomSvg from "@/components/high-level/custom-svg";
-import { SVGEnum } from "@/enums/svg-enum";
 import Validator from "@/infrastructures/validation";
 
+
 export default function Login() {
-  const [state, setState] = useState({ email: "", password: "" });
-  const [showPassword, setShowPassword] = useState(false);
+  const [state, setState] = useState({ email: "", password: "", showPassword: false, submitted: false });
   const [validator] = useState(() => new Validator());
   const validatorScopeKey = validator.scopeKey;
   const updateState = useCallback((values) => setState((curr) => ({ ...curr, ...values })), []);
   const insets = useSafeAreaInsets();
 
+  const emailError = validator.registerDestructuring({
+    name: "email",
+    value: state.email,
+    rules: [
+      { rule: "required", value: 1 },
+      { rule: "isEmail", value: 1 },
+    ],
+    validatorScopeKey,
+  });
+
+  const passwordError = validator.registerDestructuring({
+    name: "password",
+    value: state.password,
+    rules: [
+      { rule: "required", value: 1 },
+      { rule: "minStringLength", value: 6 },
+    ],
+    validatorScopeKey,
+  });
+
   const handleLogin = () => {
     Keyboard.dismiss();
     if (!validator.allValid()) {
-      updateState({});
+      updateState({ submitted: true });
       return;
     }
     // TODO: auth API
     router.replace("/customer");
   };
 
-  const togglePasswordVisibility = useCallback(() => {
-    setShowPassword(!showPassword);
-  }, [showPassword]);
-
   return (
     <LayoutView isActiveHeader={false} backgroundColor={Colors.BrandBackground}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <Pressable onPress={() => router.back()} style={styles.headerButton}>
+          <Ionicons name="arrow-back" size={24} color={Colors.BrandPrimary} />
+        </Pressable>
+        <CustomText semibold fontSize={18} color={Colors.BrandPrimary}>
+          Giriş Yap
+        </CustomText>
+        <View style={styles.headerButton} />
+      </View>
+
       <KeyboardAwareScrollView
         style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          {
-            paddingTop: insets.top,
-            paddingBottom: insets.bottom + 24,
-          },
-        ]}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         enableOnAndroid
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
           <View style={styles.container}>
-            <CustomImage uri={require("../../assets/logo.png")} isLocalFile style={styles.logo} contentFit="contain" />
-            <View style={styles.header}>
-              <CustomText color={Colors.BrandDark} style={styles.welcome} headerxxl bold>
-                Hoş geldiniz
+            {/* Title */}
+            <View style={styles.titleSection}>
+              <CustomText bold fontSize={28} color={Colors.BrandPrimary} center>
+                Hoş Geldiniz
               </CustomText>
-              <CustomText color={Colors.LightGray2} customMarginTop={8} md>
-                Hesabınıza giriş yapın
+              <CustomText md color={Colors.LightGray2} center style={styles.subtitle}>
+                Hesabınıza giriş yapmak için bilgilerinizi girin.
               </CustomText>
             </View>
 
-            <View style={styles.card}>
-              <CustomInput
-                placeholder="E-posta"
-                value={state?.email}
-                onChangeText={(text) => updateState({ email: text })}
-                error={validator.registerDestructuring({
-                  name: "email",
-                  value: state?.email,
-                  rules: [
-                    { rule: "required", value: 1 },
-                    { rule: "isEmail", value: 1 },
-                  ],
-                  validatorScopeKey,
-                })}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-              <CustomInput
-                placeholder="Şifre"
-                value={state?.password}
-                onChangeText={(text) => updateState({ password: text })}
-                error={validator.registerDestructuring({
-                  name: "password",
-                  value: state?.password,
-                  rules: [
-                    { rule: "required", value: 1 },
-                    { rule: "minStringLength", value: 6 },
-                  ],
-                  validatorScopeKey,
-                })}
-                secureTextEntry={!showPassword}
-                style={styles.passwordInput}
-                rightIcon={!state?.password ? SVGEnum.EyeOff : showPassword ? SVGEnum.EyeOff : SVGEnum.Eye}
-                onRightIconPress={togglePasswordVisibility}
-              />
-              <CustomButton title="Giriş yap" onPress={handleLogin} backgroundColor={Colors.BrandPrimary} style={styles.loginButton} marginTop={24} fontColor={Colors.White} />
-
-              <Pressable style={styles.forgotPress} onPress={() => {}} hitSlop={8}>
-                <CustomText sm color={Colors.BrandPrimary}>
-                  Şifremi unuttum
+            {/* Form */}
+            <View style={styles.form}>
+              {/* Email field */}
+              <View style={styles.fieldGroup}>
+                <CustomText style={styles.fieldLabel} color={Colors.LightGray}>
+                  E-POSTA VEYA TELEFON
                 </CustomText>
-              </Pressable>
-            </View>
+                <View style={[styles.inputWrapper, state.submitted && emailError && styles.inputError]}>
+                  <Ionicons name="mail-outline" size={20} color={Colors.LightGray} style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="isim@ornek.com"
+                    placeholderTextColor={Colors.LightGray}
+                    value={state.email}
+                    onChangeText={(text) => updateState({ email: text })}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardAppearance="light"
+                  />
+                </View>
+                {state.submitted && emailError ? (
+                  <CustomText fontSize={12} color={Colors.ErrorColor} style={styles.errorText}>
+                    {emailError}
+                  </CustomText>
+                ) : null}
+              </View>
 
-            <View style={styles.footer}>
-              <CustomText md color={Colors.BrandDark}>
-                Hesabınız yok mu?{" "}
-              </CustomText>
-              <Pressable onPress={() => router.push("/auth/register")} hitSlop={8}>
-                <CustomText md semibold color={Colors.BrandPrimary}>
-                  Kayıt ol
+              {/* Password field */}
+              <View style={styles.fieldGroup}>
+                <CustomText style={styles.fieldLabel} color={Colors.LightGray}>
+                  ŞİFRE
+                </CustomText>
+                <View style={[styles.inputWrapper, state.submitted && passwordError && styles.inputError]}>
+                  <Ionicons name="lock-closed-outline" size={20} color={Colors.LightGray} style={styles.inputIcon} />
+                  <TextInput
+                    style={[styles.textInput, { paddingRight: 44 }]}
+                    placeholder="••••••••"
+                    placeholderTextColor={Colors.LightGray}
+                    value={state.password}
+                    onChangeText={(text) => updateState({ password: text })}
+                    secureTextEntry={!state.showPassword}
+                    autoCorrect={false}
+                    keyboardAppearance="light"
+                  />
+                  <Pressable
+                    onPress={() => updateState({ showPassword: !state.showPassword })}
+                    style={styles.eyeButton}
+                    hitSlop={8}
+                  >
+                    <Ionicons
+                      name={state.showPassword ? "eye-outline" : "eye-off-outline"}
+                      size={20}
+                      color={Colors.LightGray}
+                    />
+                  </Pressable>
+                </View>
+                {state.submitted && passwordError ? (
+                  <CustomText fontSize={12} color={Colors.ErrorColor} style={styles.errorText}>
+                    {passwordError}
+                  </CustomText>
+                ) : null}
+              </View>
+
+              {/* Forgot password */}
+              <Pressable style={styles.forgotRow} onPress={() => {}} hitSlop={8}>
+                <CustomText sm color={Colors.Gold} semibold>
+                  Şifremi Unuttum?
                 </CustomText>
               </Pressable>
             </View>
           </View>
         </TouchableWithoutFeedback>
       </KeyboardAwareScrollView>
+
+      {/* Footer */}
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}>
+        <Pressable style={styles.signInButton} onPress={handleLogin}>
+          <CustomText bold fontSize={17} color={Colors.White}>
+            Giriş Yap
+          </CustomText>
+        </Pressable>
+        <View style={styles.footerLink}>
+          <CustomText md color={Colors.LightGray2}>
+            Hesabınız yok mu?{" "}
+          </CustomText>
+          <Pressable onPress={() => router.push("/auth/register")} hitSlop={8}>
+            <CustomText md bold color={Colors.BrandPrimary}>
+              Kayıt Ol
+            </CustomText>
+          </Pressable>
+        </View>
+      </View>
     </LayoutView>
   );
 }
 
 const styles = StyleSheet.create({
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 8,
+    paddingBottom: 8,
+    backgroundColor: Colors.BrandBackground,
+  },
+  headerButton: {
+    width: 48,
+    height: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 24,
+  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
+    paddingBottom: 16,
   },
   container: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
+    paddingTop: 16,
   },
-  logo: {
-    width: 120,
-    height: 120,
-    alignSelf: "center",
-    marginBottom: 24,
-  },
-  header: {
+  titleSection: {
     marginBottom: 32,
+    gap: 8,
   },
-  card: {
+  subtitle: {
+    lineHeight: 22,
+  },
+  form: {
+    gap: 20,
+  },
+  fieldGroup: {
+    gap: 6,
+  },
+  fieldLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    marginLeft: 4,
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.White,
-    borderRadius: 20,
-    padding: 24,
-    marginHorizontal: -8,
-    shadowColor: Colors.BrandDark,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  passwordInput: {
-    marginTop: 20,
-  },
-  loginButton: {
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.BorderColor,
+    paddingHorizontal: 12,
+    height: 56,
   },
-  forgotPress: {
-    alignSelf: "center",
-    marginTop: 16,
+  inputError: {
+    borderColor: Colors.ErrorColor,
+  },
+  inputIcon: {
+    marginRight: 8,
+  },
+  textInput: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "500",
+    color: Colors.BrandPrimary,
+    height: "100%",
+  },
+  eyeButton: {
+    padding: 4,
+  },
+  forgotRow: {
+    alignSelf: "flex-end",
+  },
+  errorText: {
+    marginLeft: 4,
   },
   footer: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    backgroundColor: Colors.BrandBackground,
+  },
+  signInButton: {
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: Colors.BrandPrimary,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: Colors.Gold,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 14,
+    elevation: 6,
+  },
+  footerLink: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 32,
+    marginTop: 24,
     flexWrap: "wrap",
   },
 });
