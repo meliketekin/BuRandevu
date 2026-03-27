@@ -1,9 +1,14 @@
-import { View, Pressable, StyleSheet, ImageBackground } from "react-native";
+import { useEffect, useState } from "react";
+import { View, Pressable, StyleSheet, ImageBackground, ActivityIndicator } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Shadow } from "react-native-shadow-2";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "@/firebase";
+import useAuthStore from "@/store/auth-store";
 import CustomText from "@/components/high-level/custom-text";
 import { Colors } from "@/constants/colors";
 
@@ -12,7 +17,42 @@ const BG_IMAGE = {
 };
 
 export default function Onboarding() {
+  const [checking, setChecking] = useState(true);
+  const setAuth = useAuthStore((s) => s.setAuth);
   const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          const snap = await getDoc(doc(db, "users", firebaseUser.uid));
+          const data = snap.exists() ? snap.data() : {};
+          const userType = data.userType ?? "customer";
+          const isAdmin = data.isAdmin ?? false;
+          const isBusinessInfoCompleted = data.isBusinessInfoCompleted ?? false;
+          setAuth(firebaseUser, userType, isAdmin, isBusinessInfoCompleted);
+          if (isAdmin && !isBusinessInfoCompleted) {
+            router.replace("/auth/business-info-form");
+          } else {
+            router.replace(userType === "business" ? "/admin" : "/customer");
+          }
+        } catch {
+          setChecking(false);
+        }
+      } else {
+        setChecking(false);
+      }
+    });
+    return () => unsubscribe();
+  }, [setAuth]);
+
+  if (checking) {
+    return (
+      <View style={styles.loadingScreen}>
+        <ActivityIndicator color={Colors.Gold} size="large" />
+      </View>
+    );
+  }
 
   return (
     <ImageBackground source={BG_IMAGE} style={styles.root} resizeMode="cover">
@@ -90,6 +130,12 @@ export default function Onboarding() {
 }
 
 const styles = StyleSheet.create({
+  loadingScreen: {
+    flex: 1,
+    backgroundColor: Colors.BrandPrimary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   root: {
     flex: 1,
     backgroundColor: Colors.BrandPrimary,

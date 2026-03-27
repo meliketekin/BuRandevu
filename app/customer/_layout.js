@@ -3,7 +3,7 @@ import { BottomTabBar } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../../constants/colors";
 import { useEffect, useRef } from "react";
-import { Animated, Pressable, Text, StyleSheet, View } from "react-native";
+import { Animated, BackHandler, Pressable, Text, StyleSheet, View } from "react-native";
 import { Drawer } from "react-native-drawer-layout";
 import DrawerSceneWrapper from "@/components/high-level/drawer-scene-wrapper";
 import SideMenu from "@/components/high-level/side-menu";
@@ -73,6 +73,11 @@ export default function CustomerLayout() {
   const currentRoute = segments[segments.length - 1];
   const shouldHideTabBar = HIDDEN_TAB_ROUTES.includes(currentRoute);
   const { isOpen, openDrawer, closeDrawer } = useDrawerStore();
+
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => true);
+    return () => sub.remove();
+  }, []);
 
   return (
     <Drawer

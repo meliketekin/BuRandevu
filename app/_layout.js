@@ -27,7 +27,12 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <PaperProvider>
           <StatusBar style="auto" />
-          <Stack screenOptions={{ headerShown: false }} />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="auth" />
+            <Stack.Screen name="admin" options={{ gestureEnabled: false }} />
+            <Stack.Screen name="customer" options={{ gestureEnabled: false }} />
+          </Stack>
           <ModalRenderer />
           <AlertRenderer />
         </PaperProvider>

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { BackHandler } from 'react-native';
 import { Tabs, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import useAuthStore from '@/store/auth-store';
@@ -14,6 +15,11 @@ export default function AdminLayout() {
       router.replace('/auth/business-info-form');
     }
   }, [isAdmin, isBusinessInfoCompleted]);
+
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => true);
+    return () => sub.remove();
+  }, []);
 
   return (
     <Tabs
