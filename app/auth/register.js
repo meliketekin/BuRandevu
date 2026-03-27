@@ -91,21 +91,22 @@ export default function Register() {
       console.log(state);
       await updateProfile(user, { displayName: state.name });
 
+      const isAdmin = state.role !== "customer";
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
         name: state.name,
         email: state.email,
         userType: state.role,
-        isAdmin: state.role !== "customer",
-        ...(state.role !== "customer" && {
+        isAdmin,
+        ...(isAdmin && {
           businessName: state.businessName,
           phone: state.phone,
+          isBusinessInfoCompleted: false,
         }),
         createdAt: serverTimestamp(),
       });
-      const isAdmin = state.role !== "customer";
-      setAuth(user, state.role, isAdmin);
-      router.replace(state.role === "business" ? "/admin" : "/customer");
+      setAuth(user, state.role, isAdmin, false);
+      router.replace(isAdmin ? "/auth/business-info-form" : "/customer");
     } catch (error) {
       console.log(error);
       const code = error?.code;

@@ -55,8 +55,13 @@ export default function Login() {
       const data = snap.exists() ? snap.data() : {};
       const userType = data.userType ?? "customer";
       const isAdmin = data.isAdmin ?? false;
-      setAuth(user, userType, isAdmin);
-      router.replace(userType === "business" ? "/admin" : "/customer");
+      const isBusinessInfoCompleted = data.isBusinessInfoCompleted ?? false;
+      setAuth(user, userType, isAdmin, isBusinessInfoCompleted);
+      if (isAdmin && !isBusinessInfoCompleted) {
+        router.replace("/auth/business-info-form");
+      } else {
+        router.replace(userType === "business" ? "/admin" : "/customer");
+      }
     } catch (error) {
       const code = error?.code;
       let message = "Giriş yapılamadı. Lütfen tekrar deneyin.";
