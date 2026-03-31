@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { View, StyleSheet, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase";
+import { getInitials } from "@/utils/general";
 import CustomText from "@/components/high-level/custom-text";
 import { Colors } from "@/constants/colors";
 
@@ -55,13 +56,7 @@ const TODAY_APPOINTMENTS = [
   },
 ];
 
-const TOP_LINKS = [
-  { label: "Randevular", icon: "calendar-outline", route: "/business/randevular" },
-  { label: "Talepler", icon: "file-tray-full-outline", route: "/business/talepler" },
-  { label: "Profil", icon: "person-outline", route: "/business/profil" },
-];
-
-export default function BusinessAnaSayfa() {
+export default function Home() {
   const insets = useSafeAreaInsets();
   const [userInfo, setUserInfo] = useState(null);
 
@@ -78,26 +73,10 @@ export default function BusinessAnaSayfa() {
 
   const businessName = userInfo?.businessName ?? "Digital Atelier";
   const ownerName = userInfo?.name ?? auth.currentUser?.displayName ?? "Isletme Sahibi";
-  const avatarInitials = useMemo(() => {
-    const source = ownerName?.trim() || businessName;
-    return source
-      .split(" ")
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase())
-      .join("");
-  }, [businessName, ownerName]);
 
   return (
     <View style={styles.root}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.contentContainer,
-          { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 112 },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={styles.scrollView} contentContainerStyle={[styles.contentContainer, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 112 }]} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Pressable style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}>
@@ -113,35 +92,11 @@ export default function BusinessAnaSayfa() {
             </View>
           </View>
 
-          <Pressable
-            style={({ pressed }) => [styles.avatarWrap, pressed && styles.pressed]}
-            onPress={() => router.push("/business/profil")}
-          >
+          <Pressable style={({ pressed }) => [styles.avatarWrap, pressed && styles.pressed]} onPress={() => router.push("/business/profil")}>
             <CustomText xs bold color={Colors.BrandPrimary}>
-              {avatarInitials || "IS"}
+              {getInitials(ownerName?.trim() || businessName) || "IS"}
             </CustomText>
           </Pressable>
-        </View>
-
-        <View style={styles.linkRow}>
-          <View style={styles.activeLinkPill}>
-            <Ionicons name="sparkles-outline" size={14} color={Colors.Gold} />
-            <CustomText xs bold color={Colors.Gold}>
-              Dashboard
-            </CustomText>
-          </View>
-          {TOP_LINKS.map((link) => (
-            <Pressable
-              key={link.label}
-              style={({ pressed }) => [styles.linkPill, pressed && styles.pressed]}
-              onPress={() => router.push(link.route)}
-            >
-              <Ionicons name={link.icon} size={15} color={Colors.LightGray2} />
-              <CustomText xs semibold color={Colors.LightGray2}>
-                {link.label}
-              </CustomText>
-            </Pressable>
-          ))}
         </View>
 
         <View style={styles.welcomeCard}>
@@ -246,13 +201,7 @@ export default function BusinessAnaSayfa() {
 
           <View style={styles.appointmentsCard}>
             {TODAY_APPOINTMENTS.map((appointment, index) => (
-              <View
-                key={appointment.id}
-                style={[
-                  styles.appointmentRow,
-                  index < TODAY_APPOINTMENTS.length - 1 && styles.appointmentBorder,
-                ]}
-              >
+              <View key={appointment.id} style={[styles.appointmentRow, index < TODAY_APPOINTMENTS.length - 1 && styles.appointmentBorder]}>
                 <View style={styles.appointmentLeft}>
                   <View style={styles.appointmentAvatar}>
                     <Ionicons name="person-outline" size={18} color={Colors.BrandPrimary} />
@@ -269,11 +218,7 @@ export default function BusinessAnaSayfa() {
 
                 <View style={styles.appointmentRight}>
                   <View style={[styles.statusBadge, appointment.active && styles.statusBadgeActive]}>
-                    <CustomText
-                      min
-                      bold
-                      color={appointment.active ? "#1B7A43" : Colors.LightGray2}
-                    >
+                    <CustomText min bold color={appointment.active ? "#1B7A43" : Colors.LightGray2}>
                       {appointment.status}
                     </CustomText>
                   </View>

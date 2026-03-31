@@ -1,12 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-  Modal,
-  useWindowDimensions,
-} from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, Modal, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -144,12 +137,7 @@ function filterUpcomingByDate(list, dateFilter) {
 function StatusBadge({ status }) {
   const isConfirmed = status === "confirmed";
   return (
-    <View
-      style={[
-        styles.statusPill,
-        isConfirmed ? styles.statusConfirmed : styles.statusPending,
-      ]}
-    >
+    <View style={[styles.statusPill, isConfirmed ? styles.statusConfirmed : styles.statusPending]}>
       <CustomText min bold color={isConfirmed ? ON_TERTIARY_CONTAINER : Colors.LightGray2}>
         {isConfirmed ? "Onaylandı" : "Beklemede"}
       </CustomText>
@@ -157,7 +145,7 @@ function StatusBadge({ status }) {
   );
 }
 
-export default function BusinessRandevular() {
+export default function Appointments() {
   const insets = useSafeAreaInsets();
   const { height: windowH } = useWindowDimensions();
   const [selected, setSelected] = useState(null);
@@ -208,22 +196,12 @@ export default function BusinessRandevular() {
             BuRandevu
           </CustomText>
         </View>
-        <Pressable
-          style={({ pressed }) => [styles.headerAvatarBtn, pressed && styles.pressed]}
-          onPress={() => router.push("/business/profil")}
-        >
+        <Pressable style={({ pressed }) => [styles.headerAvatarBtn, pressed && styles.pressed]} onPress={() => router.push("/business/profil")}>
           <CustomImage uri={OWNER_AVATAR} style={styles.headerAvatar} contentFit="cover" />
         </Pressable>
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + 100 },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]} showsVerticalScrollIndicator={false}>
         <View style={styles.sectionIntro}>
           <CustomText light fontSize={34} color={Colors.BrandPrimary} style={styles.pageTitle}>
             Randevular
@@ -235,52 +213,22 @@ export default function BusinessRandevular() {
 
         <View style={styles.periodSegmentCard}>
           <View style={styles.periodSegment}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.periodTabBtn,
-                periodTab === "upcoming" && styles.periodTabBtnActive,
-                pressed && styles.pressed,
-              ]}
-              onPress={() => setPeriodTab("upcoming")}
-            >
-              <CustomText
-                sm
-                semibold
-                color={periodTab === "upcoming" ? Colors.White : Colors.LightGray2}
-              >
+            <Pressable style={({ pressed }) => [styles.periodTabBtn, periodTab === "upcoming" && styles.periodTabBtnActive, pressed && styles.pressed]} onPress={() => setPeriodTab("upcoming")}>
+              <CustomText sm semibold color={periodTab === "upcoming" ? Colors.White : Colors.LightGray2}>
                 Yaklaşan
               </CustomText>
             </Pressable>
-            <Pressable
-              style={({ pressed }) => [
-                styles.periodTabBtn,
-                periodTab === "past" && styles.periodTabBtnActive,
-                pressed && styles.pressed,
-              ]}
-              onPress={() => setPeriodTab("past")}
-            >
-              <CustomText
-                sm
-                semibold
-                color={periodTab === "past" ? Colors.White : Colors.LightGray2}
-              >
+            <Pressable style={({ pressed }) => [styles.periodTabBtn, periodTab === "past" && styles.periodTabBtnActive, pressed && styles.pressed]} onPress={() => setPeriodTab("past")}>
+              <CustomText sm semibold color={periodTab === "past" ? Colors.White : Colors.LightGray2}>
                 Geçmiş
               </CustomText>
             </Pressable>
           </View>
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterRow}
-          style={styles.filterRowScroll}
-        >
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow} style={styles.filterRowScroll}>
           {periodTab === "upcoming" ? (
-            <Pressable
-              style={({ pressed }) => [styles.filterPill, pressed && styles.pressed]}
-              onPress={() => setPickerKind("date")}
-            >
+            <Pressable style={({ pressed }) => [styles.filterPill, pressed && styles.pressed]} onPress={() => setPickerKind("date")}>
               <Ionicons name="calendar-outline" size={18} color={TERTIARY} />
               <View style={styles.filterPillTextCol}>
                 <CustomText min bold color={Colors.BrandPrimary}>
@@ -294,10 +242,7 @@ export default function BusinessRandevular() {
             </Pressable>
           ) : null}
 
-          <Pressable
-            style={({ pressed }) => [styles.filterPill, pressed && styles.pressed]}
-            onPress={() => setPickerKind("employee")}
-          >
+          <Pressable style={({ pressed }) => [styles.filterPill, pressed && styles.pressed]} onPress={() => setPickerKind("employee")}>
             <Ionicons name="id-card-outline" size={18} color={TERTIARY} />
             <View style={styles.filterPillTextCol}>
               <CustomText min bold color={Colors.BrandPrimary}>
@@ -310,10 +255,7 @@ export default function BusinessRandevular() {
             <Ionicons name="chevron-down" size={16} color={Colors.LightGray2} />
           </Pressable>
 
-          <Pressable
-            style={({ pressed }) => [styles.tuneFab, pressed && styles.pressed]}
-            onPress={() => setPickerKind("tune")}
-          >
+          <Pressable style={({ pressed }) => [styles.tuneFab, pressed && styles.pressed]} onPress={() => setPickerKind("tune")}>
             <Ionicons name="options-outline" size={22} color={Colors.White} />
           </Pressable>
         </ScrollView>
@@ -333,33 +275,18 @@ export default function BusinessRandevular() {
             </View>
           ) : (
             filteredAppointments.map((item) => (
-              <Pressable
-                key={item.id}
-                style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-                onPress={() => setSelected(item)}
-              >
+              <Pressable key={item.id} style={({ pressed }) => [styles.card, pressed && styles.cardPressed]} onPress={() => setSelected(item)}>
                 <View style={styles.cardRow}>
                   <View style={styles.cardLeft}>
                     <View style={styles.avatarWrap}>
-                      <CustomImage
-                        uri={item.image}
-                        style={styles.avatar}
-                        contentFit="cover"
-                      />
-                      {item.showActiveDot ? (
-                        <View style={styles.activeDot} />
-                      ) : null}
+                      <CustomImage uri={item.image} style={styles.avatar} contentFit="cover" />
+                      {item.showActiveDot ? <View style={styles.activeDot} /> : null}
                     </View>
                     <View style={styles.cardTexts}>
                       <CustomText bold md color={Colors.BrandPrimary}>
                         {item.name}
                       </CustomText>
-                      <CustomText
-                        xs
-                        semibold
-                        color={TERTIARY}
-                        style={styles.serviceLabel}
-                      >
+                      <CustomText xs semibold color={TERTIARY} style={styles.serviceLabel}>
                         {item.service.toUpperCase()}
                       </CustomText>
                       {item.completedDay ? (
@@ -382,13 +309,7 @@ export default function BusinessRandevular() {
         </View>
       </ScrollView>
 
-      <Modal
-        visible={!!selected}
-        transparent
-        animationType="slide"
-        statusBarTranslucent
-        onRequestClose={closeSheet}
-      >
+      <Modal visible={!!selected} transparent animationType="slide" statusBarTranslucent onRequestClose={closeSheet}>
         <View style={[styles.modalRoot, { paddingTop: Math.min(insets.top, 48) }]}>
           <Pressable style={styles.modalBackdrop} onPress={closeSheet} accessibilityRole="button" />
           <View
@@ -410,11 +331,7 @@ export default function BusinessRandevular() {
                   İşlem detaylarını aşağıdan yönetebilirsiniz.
                 </CustomText>
               </View>
-              <Pressable
-                style={({ pressed }) => [styles.closeBtn, pressed && styles.pressed]}
-                onPress={closeSheet}
-                hitSlop={12}
-              >
+              <Pressable style={({ pressed }) => [styles.closeBtn, pressed && styles.pressed]} onPress={closeSheet} hitSlop={12}>
                 <Ionicons name="close" size={22} color={Colors.BrandPrimary} />
               </Pressable>
             </View>
@@ -457,27 +374,18 @@ export default function BusinessRandevular() {
                 </View>
 
                 <View style={styles.sheetActions}>
-                  <Pressable
-                    style={({ pressed }) => [styles.btnPrimary, pressed && styles.pressed]}
-                    onPress={closeSheet}
-                  >
+                  <Pressable style={({ pressed }) => [styles.btnPrimary, pressed && styles.pressed]} onPress={closeSheet}>
                     <CustomText bold lg color={Colors.White}>
                       Tamamlandı
                     </CustomText>
                   </Pressable>
                   <View style={styles.btnRow}>
-                    <Pressable
-                      style={({ pressed }) => [styles.btnSecondary, pressed && styles.pressed]}
-                      onPress={closeSheet}
-                    >
+                    <Pressable style={({ pressed }) => [styles.btnSecondary, pressed && styles.pressed]} onPress={closeSheet}>
                       <CustomText semibold md color={Colors.BrandPrimary}>
                         Gelmedi
                       </CustomText>
                     </Pressable>
-                    <Pressable
-                      style={({ pressed }) => [styles.btnDanger, pressed && styles.pressed]}
-                      onPress={closeSheet}
-                    >
+                    <Pressable style={({ pressed }) => [styles.btnDanger, pressed && styles.pressed]} onPress={closeSheet}>
                       <CustomText semibold md color={ON_ERROR_CONTAINER}>
                         İptal
                       </CustomText>
@@ -490,33 +398,16 @@ export default function BusinessRandevular() {
         </View>
       </Modal>
 
-      <Modal
-        visible={!!pickerKind}
-        transparent
-        animationType="fade"
-        statusBarTranslucent
-        onRequestClose={closePicker}
-      >
+      <Modal visible={!!pickerKind} transparent animationType="fade" statusBarTranslucent onRequestClose={closePicker}>
         <View style={styles.pickerModalRoot}>
           <Pressable style={styles.modalBackdrop} onPress={closePicker} accessibilityRole="button" />
-          <View
-            style={[
-              styles.pickerSheet,
-              { paddingBottom: Math.max(insets.bottom, 20) + 12 },
-            ]}
-          >
+          <View style={[styles.pickerSheet, { paddingBottom: Math.max(insets.bottom, 20) + 12 }]}>
             <View style={styles.sheetHandle} />
             <CustomText bold fontSize={18} color={Colors.BrandPrimary} style={styles.pickerTitle}>
-              {pickerKind === "date"
-                ? "Tarih"
-                : pickerKind === "employee"
-                  ? "Çalışan"
-                  : "Sıralama"}
+              {pickerKind === "date" ? "Tarih" : pickerKind === "employee" ? "Çalışan" : "Sıralama"}
             </CustomText>
             <CustomText sm color={PALETTE.muted} style={styles.pickerSubtitle}>
-              {pickerKind === "tune"
-                ? "Listeyi nasıl sıralamak istediğinizi seçin."
-                : "Seçiminizi yapın; liste anında güncellenir."}
+              {pickerKind === "tune" ? "Listeyi nasıl sıralamak istediğinizi seçin." : "Seçiminizi yapın; liste anında güncellenir."}
             </CustomText>
 
             <View style={styles.pickerList}>
@@ -524,11 +415,7 @@ export default function BusinessRandevular() {
                 ? DATE_FILTER_OPTIONS.map((opt) => (
                     <Pressable
                       key={opt}
-                      style={({ pressed }) => [
-                        styles.pickerRow,
-                        dateFilter === opt && styles.pickerRowActive,
-                        pressed && styles.pressed,
-                      ]}
+                      style={({ pressed }) => [styles.pickerRow, dateFilter === opt && styles.pickerRowActive, pressed && styles.pressed]}
                       onPress={() => {
                         setDateFilter(opt);
                         closePicker();
@@ -537,9 +424,7 @@ export default function BusinessRandevular() {
                       <CustomText semibold md color={Colors.BrandPrimary}>
                         {opt}
                       </CustomText>
-                      {dateFilter === opt ? (
-                        <Ionicons name="checkmark-circle" size={22} color={Colors.Gold} />
-                      ) : null}
+                      {dateFilter === opt ? <Ionicons name="checkmark-circle" size={22} color={Colors.Gold} /> : null}
                     </Pressable>
                   ))
                 : null}
@@ -548,11 +433,7 @@ export default function BusinessRandevular() {
                 ? EMPLOYEE_OPTIONS.map((opt) => (
                     <Pressable
                       key={opt}
-                      style={({ pressed }) => [
-                        styles.pickerRow,
-                        employeeFilter === opt && styles.pickerRowActive,
-                        pressed && styles.pressed,
-                      ]}
+                      style={({ pressed }) => [styles.pickerRow, employeeFilter === opt && styles.pickerRowActive, pressed && styles.pressed]}
                       onPress={() => {
                         setEmployeeFilter(opt);
                         closePicker();
@@ -561,9 +442,7 @@ export default function BusinessRandevular() {
                       <CustomText semibold md color={Colors.BrandPrimary}>
                         {opt}
                       </CustomText>
-                      {employeeFilter === opt ? (
-                        <Ionicons name="checkmark-circle" size={22} color={Colors.Gold} />
-                      ) : null}
+                      {employeeFilter === opt ? <Ionicons name="checkmark-circle" size={22} color={Colors.Gold} /> : null}
                     </Pressable>
                   ))
                 : null}
@@ -575,11 +454,7 @@ export default function BusinessRandevular() {
                   ].map((opt) => (
                     <Pressable
                       key={opt.key}
-                      style={({ pressed }) => [
-                        styles.pickerRow,
-                        sortLabel === opt.label && styles.pickerRowActive,
-                        pressed && styles.pressed,
-                      ]}
+                      style={({ pressed }) => [styles.pickerRow, sortLabel === opt.label && styles.pickerRowActive, pressed && styles.pressed]}
                       onPress={() => {
                         setSortLabel(opt.label);
                         closePicker();
@@ -588,9 +463,7 @@ export default function BusinessRandevular() {
                       <CustomText semibold md color={Colors.BrandPrimary}>
                         {opt.label}
                       </CustomText>
-                      {sortLabel === opt.label ? (
-                        <Ionicons name="checkmark-circle" size={22} color={Colors.Gold} />
-                      ) : null}
+                      {sortLabel === opt.label ? <Ionicons name="checkmark-circle" size={22} color={Colors.Gold} /> : null}
                     </Pressable>
                   ))
                 : null}

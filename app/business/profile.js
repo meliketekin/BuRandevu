@@ -11,7 +11,7 @@ import CustomText from "@/components/high-level/custom-text";
 import { Colors } from "@/constants/colors";
 import CommandBus from "@/infrastructures/command-bus/command-bus";
 
-export default function AdminProfil() {
+export default function Profile() {
   const insets = useSafeAreaInsets();
   const [userInfo, setUserInfo] = useState(null);
   const clearAuth = useAuthStore((s) => s.clearAuth);
@@ -48,11 +48,7 @@ export default function AdminProfil() {
         </CustomText>
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 24 }]}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={styles.scrollView} contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 24 }]} showsVerticalScrollIndicator={false}>
         {/* Business Card */}
         <View style={styles.businessCard}>
           <View style={styles.avatarCircle}>
@@ -84,10 +80,7 @@ export default function AdminProfil() {
               { icon: "call-outline", label: "Telefon", value: phone || "—" },
               { icon: "bookmark-outline", label: "Kategori", value: category || "—" },
             ].map((row, index, arr) => (
-              <View
-                key={row.label}
-                style={[styles.infoRow, index < arr.length - 1 && styles.infoRowBorder]}
-              >
+              <View key={row.label} style={[styles.infoRow, index < arr.length - 1 && styles.infoRowBorder]}>
                 <View style={styles.infoIconWrap}>
                   <Ionicons name={row.icon} size={18} color={Colors.BrandPrimary} />
                 </View>
@@ -105,10 +98,7 @@ export default function AdminProfil() {
         </View>
 
         {/* Logout */}
-        <Pressable
-          style={({ pressed }) => [styles.logoutButton, pressed && styles.logoutButtonPressed]}
-          onPress={handleLogout}
-        >
+        <Pressable style={({ pressed }) => [styles.logoutButton, pressed && styles.logoutButtonPressed]} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={20} color={Colors.ErrorColor} />
           <CustomText bold sm color={Colors.ErrorColor} style={styles.logoutText}>
             Çıkış Yap

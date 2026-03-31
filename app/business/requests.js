@@ -97,7 +97,7 @@ function InfoRow({ icon, label, value }) {
   );
 }
 
-export default function BusinessTalepler() {
+export default function Requests() {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const [requests, setRequests] = useState(INITIAL_REQUESTS);
@@ -136,22 +136,12 @@ export default function BusinessTalepler() {
           </CustomText>
         </View>
 
-        <Pressable
-          style={({ pressed }) => [styles.avatarButton, pressed && styles.pressed]}
-          onPress={() => router.push("/business/profil")}
-        >
+        <Pressable style={({ pressed }) => [styles.avatarButton, pressed && styles.pressed]} onPress={() => router.push("/business/profil")}>
           <CustomImage uri={OWNER_AVATAR} style={styles.avatarImage} contentFit="cover" />
         </Pressable>
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: 24, paddingBottom: insets.bottom + 112 },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingTop: 24, paddingBottom: insets.bottom + 112 }]} showsVerticalScrollIndicator={false}>
         <View style={styles.headerSection}>
           <View style={styles.headerTextBlock}>
             <CustomText xs semibold color={PALETTE.tertiary} style={styles.kicker}>
@@ -188,14 +178,8 @@ export default function BusinessTalepler() {
         ) : (
           <View style={[styles.grid, isWide && styles.gridWide]}>
             {requests.map((request) => (
-              <View
-                key={request.id}
-                style={[styles.requestCard, isWide && styles.requestCardWide]}
-              >
-                <Pressable
-                  style={({ pressed }) => [styles.cardContentButton, pressed && styles.pressed]}
-                  onPress={() => setSelectedRequest(request)}
-                >
+              <View key={request.id} style={[styles.requestCard, isWide && styles.requestCardWide]}>
+                <Pressable style={({ pressed }) => [styles.cardContentButton, pressed && styles.pressed]} onPress={() => setSelectedRequest(request)}>
                   <View style={styles.cardTopRow}>
                     <View style={styles.customerWrap}>
                       <View style={styles.customerImageWrap}>
@@ -226,29 +210,19 @@ export default function BusinessTalepler() {
 
                   <View style={styles.cardBody}>
                     <InfoRow icon="cut-outline" label="HİZMET" value={request.service} />
-                    <InfoRow
-                      icon="calendar-outline"
-                      label="TARİH & SAAT"
-                      value={`${request.dateLabel} — ${request.time}`}
-                    />
+                    <InfoRow icon="calendar-outline" label="TARİH & SAAT" value={`${request.dateLabel} — ${request.time}`} />
                     <InfoRow icon="person-outline" label="UZMAN" value={request.expert} />
                   </View>
                 </Pressable>
 
                 <View style={styles.cardActions}>
-                  <Pressable
-                    style={({ pressed }) => [styles.approveButton, pressed && styles.pressed]}
-                    onPress={() => handleResolve(request.id)}
-                  >
+                  <Pressable style={({ pressed }) => [styles.approveButton, pressed && styles.pressed]} onPress={() => handleResolve(request.id)}>
                     <CustomText xs bold color={Colors.White} style={styles.actionText}>
                       Onayla
                     </CustomText>
                   </Pressable>
 
-                  <Pressable
-                    style={({ pressed }) => [styles.rejectButton, pressed && styles.pressed]}
-                    onPress={() => handleResolve(request.id)}
-                  >
+                  <Pressable style={({ pressed }) => [styles.rejectButton, pressed && styles.pressed]} onPress={() => handleResolve(request.id)}>
                     <Ionicons name="close" size={20} color={Colors.LightGray2} />
                   </Pressable>
                 </View>
@@ -281,18 +255,9 @@ export default function BusinessTalepler() {
         </View>
       </ScrollView>
 
-      <Modal
-        visible={!!selectedRequest}
-        transparent
-        animationType="slide"
-        statusBarTranslucent
-        onRequestClose={() => setSelectedRequest(null)}
-      >
+      <Modal visible={!!selectedRequest} transparent animationType="slide" statusBarTranslucent onRequestClose={() => setSelectedRequest(null)}>
         <View style={styles.modalRoot}>
-          <Pressable
-            style={styles.modalBackdrop}
-            onPress={() => setSelectedRequest(null)}
-          />
+          <Pressable style={styles.modalBackdrop} onPress={() => setSelectedRequest(null)} />
 
           <View
             style={[
@@ -315,10 +280,7 @@ export default function BusinessTalepler() {
                 </CustomText>
               </View>
 
-              <Pressable
-                style={({ pressed }) => [styles.detailCloseButton, pressed && styles.pressed]}
-                onPress={() => setSelectedRequest(null)}
-              >
+              <Pressable style={({ pressed }) => [styles.detailCloseButton, pressed && styles.pressed]} onPress={() => setSelectedRequest(null)}>
                 <Ionicons name="close" size={22} color={Colors.LightGray2} />
               </Pressable>
             </View>
@@ -367,20 +329,14 @@ export default function BusinessTalepler() {
                 </View>
 
                 <View style={styles.detailActions}>
-                  <Pressable
-                    style={({ pressed }) => [styles.modalApproveButton, pressed && styles.pressed]}
-                    onPress={() => handleResolve(selectedRequest.id)}
-                  >
+                  <Pressable style={({ pressed }) => [styles.modalApproveButton, pressed && styles.pressed]} onPress={() => handleResolve(selectedRequest.id)}>
                     <Ionicons name="checkmark-circle" size={22} color={Colors.White} />
                     <CustomText bold lg color={Colors.White}>
                       Onayla
                     </CustomText>
                   </Pressable>
 
-                  <Pressable
-                    style={({ pressed }) => [styles.modalRejectButton, pressed && styles.pressed]}
-                    onPress={() => handleResolve(selectedRequest.id)}
-                  >
+                  <Pressable style={({ pressed }) => [styles.modalRejectButton, pressed && styles.pressed]} onPress={() => handleResolve(selectedRequest.id)}>
                     <Ionicons name="close-circle" size={22} color={Colors.BrandPrimary} />
                     <CustomText bold lg color={Colors.BrandPrimary}>
                       Reddet

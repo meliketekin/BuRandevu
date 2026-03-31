@@ -7,6 +7,7 @@ import { router } from "expo-router";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase";
 import useAuthStore from "@/store/auth-store";
+import { getInitials } from "@/utils/general";
 import CustomText from "@/components/high-level/custom-text";
 import { Colors } from "@/constants/colors";
 
@@ -31,40 +32,19 @@ const PENDING_TASKS = [
 
 function DashboardActionCard({ item, featured, onPress }) {
   return (
-    <Pressable
-      style={({ pressed }) => [
-        featured ? styles.featuredCardShell : styles.gridCardShell,
-        pressed && styles.pressed,
-      ]}
-      onPress={onPress}
-    >
+    <Pressable style={({ pressed }) => [featured ? styles.featuredCardShell : styles.gridCardShell, pressed && styles.pressed]} onPress={onPress}>
       <ImageBackground source={{ uri: item.image }} style={styles.cardImage} imageStyle={styles.cardImageStyle}>
-        <LinearGradient
-          colors={["rgba(0,0,0,0.08)", "rgba(0,0,0,0.42)", "rgba(0,0,0,0.9)"]}
-          locations={[0, 0.45, 1]}
-          style={[styles.cardOverlay, featured && styles.featuredCardOverlay]}
-        >
+        <LinearGradient colors={["rgba(0,0,0,0.08)", "rgba(0,0,0,0.42)", "rgba(0,0,0,0.9)"]} locations={[0, 0.45, 1]} style={[styles.cardOverlay, featured && styles.featuredCardOverlay]}>
           <View style={styles.cardIconWrap}>
             <Ionicons name={item.icon} size={featured ? 28 : 22} color={Colors.Gold} />
             {featured ? <View style={styles.cardPulseDot} /> : null}
           </View>
 
           <View style={styles.cardTextWrap}>
-            <CustomText
-              extraBold
-              color={Colors.White}
-              fontSize={featured ? 24 : 20}
-              style={styles.cardTitle}
-            >
+            <CustomText extraBold color={Colors.White} fontSize={featured ? 24 : 20} style={styles.cardTitle}>
               {item.title}
             </CustomText>
-            <CustomText
-              interMedium
-              color="rgba(255,255,255,0.74)"
-              fontSize={featured ? 12 : 10}
-              letterSpacing={featured ? 0.2 : 0.8}
-              style={featured ? null : styles.cardCaption}
-            >
+            <CustomText interMedium color="rgba(255,255,255,0.74)" fontSize={featured ? 12 : 10} letterSpacing={featured ? 0.2 : 0.8} style={featured ? null : styles.cardCaption}>
               {item.caption}
             </CustomText>
           </View>
@@ -74,7 +54,7 @@ function DashboardActionCard({ item, featured, onPress }) {
   );
 }
 
-export default function BusinessYonetim() {
+export default function Management() {
   const insets = useSafeAreaInsets();
   const isAdmin = useAuthStore((s) => s.isAdmin);
   const [userInfo, setUserInfo] = useState(null);
@@ -96,15 +76,6 @@ export default function BusinessYonetim() {
   const ownerName = userInfo?.name ?? auth.currentUser?.displayName ?? "Isletme Sahibi";
   const roleLabel = isAdmin ? "MASTER DASHBOARD" : "OPERASYON PANELI";
 
-  const avatarInitials = useMemo(() => {
-    const source = ownerName?.trim() || businessName;
-    return source
-      .split(" ")
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase())
-      .join("");
-  }, [businessName, ownerName]);
 
   const dashboardCards = useMemo(
     () => [
@@ -145,7 +116,7 @@ export default function BusinessYonetim() {
         image: CARD_IMAGES.accounting,
       },
     ],
-    [isAdmin]
+    [isAdmin],
   );
 
   const handleCardPress = (item) => {
@@ -184,12 +155,9 @@ export default function BusinessYonetim() {
             </View>
           </View>
 
-          <Pressable
-            style={({ pressed }) => [styles.avatarButton, pressed && styles.pressed]}
-            onPress={() => router.push("/business/profil")}
-          >
+          <Pressable style={({ pressed }) => [styles.avatarButton, pressed && styles.pressed]} onPress={() => router.push("/business/profil")}>
             <CustomText interBold fontSize={12} color={Colors.BrandPrimary}>
-              {avatarInitials || "BR"}
+              {getInitials(ownerName?.trim() || businessName) || "BR"}
             </CustomText>
           </Pressable>
         </View>
@@ -211,11 +179,7 @@ export default function BusinessYonetim() {
 
           <View style={styles.miniGrid}>
             {dashboardCards.slice(1).map((item) => (
-              <DashboardActionCard
-                key={item.key}
-                item={item}
-                onPress={() => handleCardPress(item)}
-              />
+              <DashboardActionCard key={item.key} item={item} onPress={() => handleCardPress(item)} />
             ))}
           </View>
         </View>
@@ -252,13 +216,7 @@ export default function BusinessYonetim() {
             <View style={styles.pendingContent}>
               <View style={styles.avatarStack}>
                 {PENDING_TASKS.map((item, index) => (
-                  <View
-                    key={item.id}
-                    style={[
-                      styles.pendingAvatar,
-                      index > 0 && styles.pendingAvatarOverlap,
-                    ]}
-                  >
+                  <View key={item.id} style={[styles.pendingAvatar, index > 0 && styles.pendingAvatarOverlap]}>
                     <CustomText interBold fontSize={10} color={Colors.BrandPrimary}>
                       {item.initials}
                     </CustomText>
