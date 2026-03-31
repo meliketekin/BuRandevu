@@ -72,7 +72,7 @@ export default function BusinessInfoForm() {
         isBusinessInfoCompleted: true,
       });
       setBusinessInfoCompleted();
-      router.replace("/admin");
+      router.replace("/business");
     } catch (err) {
       updateState({ error: "Bilgiler kaydedilemedi. Lütfen tekrar deneyin." });
     } finally {

@@ -30,7 +30,7 @@ export default function RootLayout() {
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="auth" />
-            <Stack.Screen name="admin" options={{ gestureEnabled: false }} />
+            <Stack.Screen name="business" options={{ gestureEnabled: false }} />
             <Stack.Screen name="customer" options={{ gestureEnabled: false }} />
           </Stack>
           <ModalRenderer />

@@ -60,7 +60,7 @@ export default function Login() {
       if (isAdmin && !isBusinessInfoCompleted) {
         router.replace("/auth/business-info-form");
       } else {
-        router.replace(userType === "business" ? "/admin" : "/customer");
+        router.replace(userType === "business" ? "/business" : "/customer");
       }
     } catch (error) {
       const code = error?.code;

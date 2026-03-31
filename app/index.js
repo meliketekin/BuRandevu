@@ -34,7 +34,7 @@ export default function Onboarding() {
           if (isAdmin && !isBusinessInfoCompleted) {
             router.replace("/auth/business-info-form");
           } else {
-            router.replace(userType === "business" ? "/admin" : "/customer");
+            router.replace(userType === "business" ? "/business" : "/customer");
           }
         } catch {
           setChecking(false);

@@ -1,9 +1,12 @@
 import { View, Text, StyleSheet } from 'react-native';
+import useAuthStore from '@/store/auth-store';
 
-export default function AdminRandevular() {
+export default function BusinessYonetim() {
+  const isAdmin = useAuthStore((s) => s.isAdmin);
+  const title = isAdmin ? 'Yönetim' : 'Yönet';
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Randevular</Text>
+      <Text style={styles.title}>{title}</Text>
     </View>
   );
 }
