@@ -94,6 +94,7 @@ export default function Management() {
         caption: "Hizmetlerini gör, ekle ve düzenle",
         icon: "cut-outline",
         image: CARD_IMAGES.services,
+        route: "/business/management/services",
       },
       {
         key: "business",
