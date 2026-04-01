@@ -18,8 +18,7 @@ const CARD_IMAGES = {
     "https://lh3.googleusercontent.com/aida-public/AB6AXuB0mGOSUYejPX38URIgXFI-WX58NFwVXEFffTj_a8NopToOFwi6nSTfJct6oCdbLjRqSoDAaDlGZqTvKo9PzR4kpRV9j5yCU91g1g7PaFmo_kBXNMbaZjT0TvoByXsxFy5lbUbpvR_B4Senkd6r_jwTBlIYFv_Dwnp2fIemq3rAzUywEZ8FUh1QMaOP1rt3u2A-jvjUQudYwNAuxLVP2heIXyYHW1ru_seGkty2K517ZmOonEMlDwX_XJTIVrp6EYCuQsEedferYeY",
   business:
     "https://lh3.googleusercontent.com/aida-public/AB6AXuBq1RJ7jSGWmb8frLV39Fw_tUZPgxNtL3JBsjQTjnz8a4XfBWa1i8boWNHXagpPZDkxtfZzqkAsf4Bv_DFm7criBFEtYs-6Kkk9J6P4dSBEqzFsbVOl0u2woYKPYt5Iax-zb6K5abSiWSp7HGXQvh1P082IQg-Q3ILWTqfcNeyddIUeNc6ccvJhxwguPwN7bfmbFaHiru1XISaGjNFmphdFsvrGj_8xxzS5mHElhCG87bGoPOUFeo7EMaay-F4NmUTW6U73lpL7Ah0",
-  hours:
-    "https://st2.depositphotos.com/8468478/12253/i/600/depositphotos_122530756-stock-photo-black-clock-isolated-on-white.jpg",
+  hours: "https://st2.depositphotos.com/8468478/12253/i/600/depositphotos_122530756-stock-photo-black-clock-isolated-on-white.jpg",
   accounting:
     "https://lh3.googleusercontent.com/aida-public/AB6AXuA8Qmk6_BeJlpR4yJZoROnyu8LS7JlGh2W-xVT7mepI0cuJjAus5Pqt4RKvj1XcmRJqexmAvSGKVI7wOyJCSTr8NnpEZlCrcqTaKuq1wP8pQcfmkG-c4q7OqwqrObVWSxLrUCfedtHs2O_EHlZfFZ4_4k-WdTbkB2K1OQPNrNfk-PiIZZXJuCXOg-YgwKmxQH5SpXrP2dVN1ZJuM2Ws1UoCC6nAoBi-TR_RxFdEjalw68RM0yqIoXzrXg43S0oxRjlekG0Ig7AGlUw",
 };
@@ -44,7 +43,7 @@ function DashboardActionCard({ item, featured, onPress }) {
             <CustomText extraBold color={Colors.White} fontSize={featured ? 24 : 20} style={styles.cardTitle}>
               {item.title}
             </CustomText>
-            <CustomText interMedium color="rgba(255,255,255,0.74)" fontSize={featured ? 12 : 10} letterSpacing={featured ? 0.2 : 0.8} style={featured ? null : styles.cardCaption}>
+            <CustomText medium color="rgba(255,255,255,0.74)" fontSize={featured ? 12 : 10} letterSpacing={featured ? 0.2 : 0.8} style={featured ? null : styles.cardCaption}>
               {item.caption}
             </CustomText>
           </View>
@@ -73,20 +72,18 @@ export default function Management() {
   }, []);
 
   const businessName = userInfo?.businessName ?? "BuRandevu Studio";
-  const ownerName = userInfo?.name ?? auth.currentUser?.displayName ?? "Isletme Sahibi";
-  const roleLabel = isAdmin ? "MASTER DASHBOARD" : "OPERASYON PANELI";
-
+  const ownerName = userInfo?.name ?? auth.currentUser?.displayName ?? "İşletme sahibi";
+  const roleLabel = isAdmin ? "MASTER DASHBOARD" : "OPERASYON PANELİ";
 
   const dashboardCards = useMemo(
     () => [
       {
         key: "employees",
-        title: isAdmin ? "Calisanlar" : "Ekibim",
+        title: isAdmin ? "Çalışanlar" : "Ekibim",
         caption: "Çalışanlarını gör, ekle ve düzenle",
         icon: "people-outline",
         image: CARD_IMAGES.employees,
         route: "/business/management/employees",
-
       },
       {
         key: "services",
@@ -98,23 +95,23 @@ export default function Management() {
       },
       {
         key: "business",
-        title: "Isletme Bilgileri",
-        caption: "Sube profilini duzenle",
+        title: "İşletme bilgileri",
+        caption: "Şube profilini düzenle",
         icon: "business-outline",
         image: CARD_IMAGES.business,
-        route: "/business/management/business-info",
+        route: "/business/management/edit-business-info-form",
       },
       {
         key: "hours",
-        title: "Calisma Saatleri",
-        caption: "Calisma saatlerini gör ve düzenle",
+        title: "Çalışma saatleri",
+        caption: "Çalışma saatlerini gör ve düzenle",
         icon: "time-outline",
         image: CARD_IMAGES.hours,
       },
       {
         key: "accounting",
         title: "Muhasebe",
-        caption: "Gunluk ciroyu incele",
+        caption: "Günlük ciroyu incele",
         icon: "wallet-outline",
         image: CARD_IMAGES.accounting,
         route: "/business/management/accounting",
@@ -129,7 +126,7 @@ export default function Management() {
       return;
     }
 
-    Alert.alert("Yolda", `${item.title} ekrani henuz baglanmadi.`);
+    Alert.alert("Yolda", `${item.title} ekranı henüz bağlanmadı.`);
   };
 
   return (
@@ -153,14 +150,14 @@ export default function Management() {
               <CustomText extraBold fontSize={20} color={Colors.BrandPrimary} style={styles.brandName}>
                 BURANDEVU
               </CustomText>
-              <CustomText interSemiBold fontSize={11} color={Colors.LightGray2}>
+              <CustomText semibold fontSize={11} color={Colors.LightGray2}>
                 {businessName}
               </CustomText>
             </View>
           </View>
 
           <Pressable style={({ pressed }) => [styles.avatarButton, pressed && styles.pressed]} onPress={() => router.push("/business/profil")}>
-            <CustomText interBold fontSize={12} color={Colors.BrandPrimary}>
+            <CustomText bold fontSize={12} color={Colors.BrandPrimary}>
               {general.getInitials(ownerName?.trim() || businessName) || "BR"}
             </CustomText>
           </Pressable>
@@ -175,8 +172,6 @@ export default function Management() {
             ))}
           </View>
         </View>
-
-
       </ScrollView>
     </View>
   );

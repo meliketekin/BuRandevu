@@ -64,9 +64,9 @@ const CustomText = ({
   letterSpacing,
   onPress,
   interRegular = false,
-  interMedium = false,
-  interSemiBold = false,
-  interBold = false,
+  medium = false,
+  semibold = false,
+  bold = false,
 }) => {
   // Tema renklerini al
   const colors = Colors;
@@ -113,11 +113,6 @@ const CustomText = ({
   if (semibold) fontFamily = "Urbanist_600SemiBold"; //600
   if (bold) fontFamily = "Urbanist_700Bold"; //700
   if (extraBold) fontFamily = "Urbanist_800ExtraBold"; //800
-
-  if (interRegular) fontFamily = "Inter_400Regular";
-  if (interMedium) fontFamily = "Inter_500Medium";
-  if (interSemiBold) fontFamily = "Inter_600SemiBold";
-  if (interBold) fontFamily = "Inter_700Bold";
 
   const createText = useMemo(() => {
     const newTextArray = children instanceof Array ? children : [children];

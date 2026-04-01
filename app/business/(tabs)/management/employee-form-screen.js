@@ -80,7 +80,7 @@ function HourRow({ item, isLast, onToggle }) {
       {item.enabled ? (
         <View style={styles.hoursInputsRow}>
           <View style={styles.hourChip}>
-            <CustomText interBold fontSize={10} color={Colors.LightGray2} letterSpacing={1}>
+            <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={1}>
               BASLANGIC
             </CustomText>
             <CustomText extraBold fontSize={14} color={Colors.BrandPrimary}>
@@ -88,12 +88,12 @@ function HourRow({ item, isLast, onToggle }) {
             </CustomText>
           </View>
 
-          <CustomText interMedium fontSize={12} color={Colors.LightGray2}>
+          <CustomText medium fontSize={12} color={Colors.LightGray2}>
             ile
           </CustomText>
 
           <View style={styles.hourChip}>
-            <CustomText interBold fontSize={10} color={Colors.LightGray2} letterSpacing={1}>
+            <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={1}>
               BITIS
             </CustomText>
             <CustomText extraBold fontSize={14} color={Colors.BrandPrimary}>
@@ -118,7 +118,7 @@ function ServiceItem({ item, onRemove }) {
           <CustomText bold fontSize={14} color={Colors.BrandPrimary}>
             {item.title}
           </CustomText>
-          <CustomText interBold fontSize={10} color={Colors.LightGray2} letterSpacing={1.1}>
+          <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={1.1}>
             {item.meta}
           </CustomText>
         </View>
@@ -182,14 +182,14 @@ export default function EmployeeFormScreen({
             </View>
 
             <Pressable style={({ pressed }) => [styles.changePhotoBtn, pressed && styles.pressed]} onPress={() => Alert.alert("Yakinda", "Foto degistirme akisi daha sonra baglanacak.")}>
-              <CustomText interBold fontSize={11} color={Colors.Gold} letterSpacing={1.2}>
+              <CustomText bold fontSize={11} color={Colors.Gold} letterSpacing={1.2}>
                 FOTOGRAFI DEGISTIR
               </CustomText>
             </Pressable>
           </View>
 
           <View style={styles.section}>
-            <CustomText interBold fontSize={10} color={Colors.LightGray2} letterSpacing={1.2} style={styles.sectionLabel}>
+            <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={1.2} style={styles.sectionLabel}>
               KIMLIK
             </CustomText>
 
@@ -206,10 +206,10 @@ export default function EmployeeFormScreen({
 
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <CustomText interBold fontSize={10} color={Colors.LightGray2} letterSpacing={1.2}>
+              <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={1.2}>
                 CALISMA SAATLERI
               </CustomText>
-              <CustomText interBold fontSize={10} color={Colors.Gold} letterSpacing={1}>
+              <CustomText bold fontSize={10} color={Colors.Gold} letterSpacing={1}>
                 PZT - PAZ
               </CustomText>
             </View>
@@ -227,7 +227,7 @@ export default function EmployeeFormScreen({
           </View>
 
           <View style={styles.section}>
-            <CustomText interBold fontSize={10} color={Colors.LightGray2} letterSpacing={1.2} style={styles.sectionLabel}>
+            <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={1.2} style={styles.sectionLabel}>
               ATANAN HIZMETLER
             </CustomText>
 
@@ -238,7 +238,7 @@ export default function EmployeeFormScreen({
 
               <Pressable style={({ pressed }) => [styles.addServiceBtn, pressed && styles.pressed]} onPress={addService}>
                 <Ionicons name="add-circle-outline" size={16} color={Colors.Gold} />
-                <CustomText interBold fontSize={11} color={Colors.Gold} letterSpacing={1.5}>
+                <CustomText bold fontSize={11} color={Colors.Gold} letterSpacing={1.5}>
                   HIZMET EKLE
                 </CustomText>
               </Pressable>

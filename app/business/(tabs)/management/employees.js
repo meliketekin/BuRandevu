@@ -49,7 +49,7 @@ export default function Employees() {
                 <CustomText bold color={Colors.BrandPrimary} style={styles.employeeName}>
                   {emp.name}
                 </CustomText>
-                <CustomText interMedium fontSize={12} color={Colors.LightGray2}>
+                <CustomText medium fontSize={12} color={Colors.LightGray2}>
                   {emp.role}
                 </CustomText>
               </View>

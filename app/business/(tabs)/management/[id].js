@@ -16,7 +16,7 @@ function StatCard({ label, value, icon, highlighted }) {
       </View>
 
       <View style={styles.statTextWrap}>
-        <CustomText interBold fontSize={10} color={Colors.LightGray2} letterSpacing={1}>
+        <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={1}>
           {label}
         </CustomText>
         <CustomText extraBold fontSize={22} color={Colors.BrandPrimary}>
@@ -37,7 +37,7 @@ function ServiceCard({ item }) {
       <View style={styles.serviceFooter}>
         <View style={styles.serviceMeta}>
           <Ionicons name="time-outline" size={14} color="rgba(255,255,255,0.72)" />
-          <CustomText interMedium fontSize={11} color="rgba(255,255,255,0.72)">
+          <CustomText medium fontSize={11} color="rgba(255,255,255,0.72)">
             {item.duration}
           </CustomText>
         </View>
@@ -98,13 +98,13 @@ export default function EmployeeDetail() {
 
             <View style={styles.profileInfo}>
               <View style={styles.profileTopRow}>
-                <CustomText interBold fontSize={10} color={Colors.Gold} letterSpacing={1.2}>
+                <CustomText bold fontSize={10} color={Colors.Gold} letterSpacing={1.2}>
                   {employee.role.toUpperCase()}
                 </CustomText>
 
                 <View style={styles.ratingBadge}>
                   <Ionicons name="star" size={11} color="#8C721E" />
-                  <CustomText interBold fontSize={11} color="#8C721E">
+                  <CustomText bold fontSize={11} color="#8C721E">
                     {employee.rating}
                   </CustomText>
                 </View>
@@ -116,7 +116,7 @@ export default function EmployeeDetail() {
 
               <View style={styles.availableRow}>
                 <View style={styles.availableDot} />
-                <CustomText interBold fontSize={12} color="#10B981" letterSpacing={1}>
+                <CustomText bold fontSize={12} color="#10B981" letterSpacing={1}>
                   {employee.availability.toUpperCase()}
                 </CustomText>
               </View>
@@ -124,13 +124,13 @@ export default function EmployeeDetail() {
           </View>
 
           <View style={styles.bioSection}>
-            <CustomText interMedium fontSize={14} color={Colors.LightGray2} style={styles.bioText}>
+            <CustomText medium fontSize={14} color={Colors.LightGray2} style={styles.bioText}>
               {employee.bio}
             </CustomText>
 
             <View style={styles.locationRow}>
               <Ionicons name="location-outline" size={15} color="rgba(107,107,107,0.75)" />
-              <CustomText interMedium fontSize={12} color="rgba(107,107,107,0.9)" style={styles.locationText}>
+              <CustomText medium fontSize={12} color="rgba(107,107,107,0.9)" style={styles.locationText}>
                 {employee.location}
               </CustomText>
             </View>
@@ -144,10 +144,10 @@ export default function EmployeeDetail() {
 
         <View style={styles.servicesSection}>
           <View style={styles.sectionTitleRow}>
-            <CustomText interBold fontSize={10} color={Colors.LightGray2} letterSpacing={2}>
+            <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={2}>
               ONE CIKAN HIZMETLER
             </CustomText>
-            <CustomText interBold fontSize={10} color={Colors.Gold} letterSpacing={1}>
+            <CustomText bold fontSize={10} color={Colors.Gold} letterSpacing={1}>
               TUMUNU GOR
             </CustomText>
           </View>
@@ -161,7 +161,7 @@ export default function EmployeeDetail() {
 
         <View style={styles.sectionCard}>
           <View style={styles.sectionTitleRow}>
-            <CustomText interBold fontSize={10} color={Colors.LightGray2} letterSpacing={2}>
+            <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={2}>
               CALISMA SAATLERI
             </CustomText>
             <Ionicons name="time-outline" size={18} color={Colors.LightGray2} />
@@ -177,10 +177,10 @@ export default function EmployeeDetail() {
                   item.closed && styles.hoursRowMuted,
                 ]}
               >
-                <CustomText interBold fontSize={14} color={Colors.BrandPrimary}>
+                <CustomText bold fontSize={14} color={Colors.BrandPrimary}>
                   {item.day}
                 </CustomText>
-                <CustomText interBold fontSize={item.closed ? 11 : 14} color={item.closed ? Colors.LightGray2 : Colors.BrandPrimary} letterSpacing={item.closed ? 1.5 : 0}>
+                <CustomText bold fontSize={item.closed ? 11 : 14} color={item.closed ? Colors.LightGray2 : Colors.BrandPrimary} letterSpacing={item.closed ? 1.5 : 0}>
                   {item.hours}
                 </CustomText>
               </View>

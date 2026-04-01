@@ -32,14 +32,14 @@ export default function Services() {
         <View style={styles.heroCard}>
           <View style={styles.heroBadge}>
             <Ionicons name="sparkles-outline" size={15} color={Colors.Gold} />
-            <CustomText interBold fontSize={10} color={Colors.Gold} letterSpacing={1.2}>
+            <CustomText bold fontSize={10} color={Colors.Gold} letterSpacing={1.2}>
               PREMIUM MENU
             </CustomText>
           </View>
           <CustomText extraBold fontSize={24} color={Colors.BrandPrimary} style={styles.heroTitle}>
             Hizmetlerini daha iyi yonet
           </CustomText>
-          <CustomText interMedium fontSize={13} color={Colors.LightGray2} style={styles.heroDescription}>
+          <CustomText medium fontSize={13} color={Colors.LightGray2} style={styles.heroDescription}>
             Fiyat, sure ve aciklama detaylarini tek ekranda duzenleyip hizmet deneyimini daha modern bir yapida yonet.
           </CustomText>
         </View>
@@ -56,21 +56,21 @@ export default function Services() {
                   <CustomText bold color={Colors.BrandPrimary} style={styles.employeeName}>
                     {service.name}
                   </CustomText>
-                  <CustomText interMedium fontSize={12} color={Colors.LightGray2} style={styles.description}>
+                  <CustomText medium fontSize={12} color={Colors.LightGray2} style={styles.description}>
                     {service.description}
                   </CustomText>
 
                   <View style={styles.metaRow}>
                     <View style={styles.metaChip}>
                       <Ionicons name="time-outline" size={13} color={Colors.BrandPrimary} />
-                      <CustomText interBold fontSize={10} color={Colors.BrandPrimary} letterSpacing={0.4}>
+                      <CustomText bold fontSize={10} color={Colors.BrandPrimary} letterSpacing={0.4}>
                         {service.duration}
                       </CustomText>
                     </View>
 
                     <View style={[styles.metaChip, styles.priceChip]}>
                       <Ionicons name="wallet-outline" size={13} color={Colors.Gold} />
-                      <CustomText interBold fontSize={10} color={Colors.Gold} letterSpacing={0.4}>
+                      <CustomText bold fontSize={10} color={Colors.Gold} letterSpacing={0.4}>
                         {service.price}
                       </CustomText>
                     </View>

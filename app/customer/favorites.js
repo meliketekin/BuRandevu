@@ -89,7 +89,7 @@ const favorites = () => {
                   </Pressable>
 
                   <View style={styles.categoryChip}>
-                    <CustomText interBold min color={Colors.White} style={styles.categoryChipText}>
+                    <CustomText bold min color={Colors.White} style={styles.categoryChipText}>
                       {item.categoryLabel}
                     </CustomText>
                   </View>

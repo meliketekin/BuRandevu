@@ -88,7 +88,7 @@ export default function Home() {
   }, []);
 
   const businessName = userInfo?.businessName ?? "Digital Atelier";
-  const ownerName = userInfo?.name ?? auth.currentUser?.displayName ?? "Isletme Sahibi";
+  const ownerName = userInfo?.name ?? auth.currentUser?.displayName ?? "İşletme sahibi";
 
   return (
     <View style={styles.root}>

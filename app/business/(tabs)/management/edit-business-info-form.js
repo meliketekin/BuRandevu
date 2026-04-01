@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Pressable, StyleSheet, View } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase";
 import FormInput from "@/components/high-level/custom-input";
 import CustomImage from "@/components/high-level/custom-image";
 import CustomText from "@/components/high-level/custom-text";
 import { Colors } from "@/constants/colors";
+import { BUSINESS_CATEGORIES, normalizeBusinessCategory } from "@/enums/business-category-enum";
 
 const GALLERY_IMAGES = [
   {
@@ -34,6 +36,7 @@ const MAP_PLACEHOLDER =
 
 const DEFAULT_DESCRIPTION = "Premium hair and beard styling services in the heart of the city.";
 const DEFAULT_ADDRESS = "123 Luxury Ave, Suite 400,\nNew York, NY 10001";
+const LINKS_PLACEHOLDER = "https://ornek.com\nhttps://instagram.com/isletmeniz";
 
 function GalleryItem({ item, onRemove }) {
   return (
@@ -46,12 +49,17 @@ function GalleryItem({ item, onRemove }) {
   );
 }
 
-export default function BusinessInfoScreen() {
+export default function EditBusinessInfoForm() {
   const insets = useSafeAreaInsets();
   const [businessName, setBusinessName] = useState("");
+  const [category, setCategory] = useState("");
   const [description, setDescription] = useState(DEFAULT_DESCRIPTION);
   const [address, setAddress] = useState(DEFAULT_ADDRESS);
+  const [phone, setPhone] = useState("");
+  const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [socialLinksText, setSocialLinksText] = useState("");
   const [gallery, setGallery] = useState(GALLERY_IMAGES);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const uid = auth.currentUser?.uid;
@@ -63,22 +71,58 @@ export default function BusinessInfoScreen() {
 
         const data = snap.data();
         setBusinessName(data?.businessName ?? "Elite Grooming Co.");
+        setCategory(normalizeBusinessCategory(data?.category ?? ""));
         setDescription(data?.description ?? DEFAULT_DESCRIPTION);
         setAddress(data?.address ?? DEFAULT_ADDRESS);
+        setPhone(data?.phone ?? "");
+        setWhatsappNumber(data?.whatsappNumber ?? "");
+        if (Array.isArray(data?.socialLinks)) {
+          setSocialLinksText(data.socialLinks.join("\n"));
+        } else {
+          setSocialLinksText(data?.socialLinks ?? "");
+        }
       })
       .catch(() => {
         setBusinessName("Elite Grooming Co.");
       });
   }, []);
 
-  const galleryCountLabel = useMemo(() => `${gallery.length} / 12 Foto`, [gallery.length]);
+  const galleryCountLabel = useMemo(() => `${gallery.length} / 12 fotoğraf`, [gallery.length]);
 
-  const handleSave = () => {
-    Alert.alert("Taslak Kaydedildi", `${businessName || "Isletme"} bilgileri kayit icin hazirlandi.`);
+  const handleSave = async () => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) {
+      Alert.alert("Hata", "Kullanıcı bulunamadı.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const socialLinks = socialLinksText
+        .split("\n")
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+      await updateDoc(doc(db, "users", uid), {
+        businessName: businessName.trim(),
+        category,
+        description: description.trim(),
+        address: address.trim(),
+        phone: phone.trim(),
+        whatsappNumber: whatsappNumber.trim(),
+        socialLinks,
+      });
+
+      Alert.alert("Kaydedildi", `${businessName || "İşletme"} bilgileri güncellendi.`);
+    } catch {
+      Alert.alert("Hata", "Bilgiler kaydedilirken bir sorun oluştu. Lütfen tekrar deneyin.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleAddImage = () => {
-    Alert.alert("Yakinda", "Galeriye gorsel ekleme akisi daha sonra baglanacak.");
+    Alert.alert("Yakında", "Galeriye görsel ekleme akışı daha sonra bağlanacak.");
   };
 
   const handleRemoveImage = (id) => {
@@ -86,11 +130,7 @@ export default function BusinessInfoScreen() {
   };
 
   const handleChangeLocation = () => {
-    Alert.alert("Yakinda", "Konum secme akisi daha sonra baglanacak.");
-  };
-
-  const handleArchive = () => {
-    Alert.alert("Profili Arsivle", "Isletme profilini arsivleme akisi daha sonra baglanacak.");
+    Alert.alert("Yakında", "Konum seçme akışı daha sonra bağlanacak.");
   };
 
   return (
@@ -103,19 +143,19 @@ export default function BusinessInfoScreen() {
             </Pressable>
 
             <CustomText extraBold fontSize={19} color={Colors.BrandPrimary} style={styles.headerTitle}>
-              Isletme Bilgileri
+              İşletme bilgileri
             </CustomText>
           </View>
 
-          <Pressable style={({ pressed }) => [styles.saveButton, pressed && styles.pressed]} onPress={handleSave}>
+          <Pressable style={({ pressed }) => [styles.saveButton, pressed && styles.pressed]} onPress={handleSave} disabled={isSaving}>
             <CustomText extraBold fontSize={12} color={Colors.BrandPrimary} letterSpacing={0.5}>
-              KAYDET
+              {isSaving ? "KAYDEDILIYOR..." : "KAYDET"}
             </CustomText>
           </Pressable>
         </View>
       </View>
 
-      <ScrollView
+      <KeyboardAwareScrollView
         style={styles.scroll}
         contentContainerStyle={{
           paddingTop: insets.top + 88,
@@ -123,42 +163,50 @@ export default function BusinessInfoScreen() {
           paddingHorizontal: 20,
         }}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid
+        enableAutomaticScroll
+        extraScrollHeight={24}
+        keyboardOpeningTime={0}
       >
         <View style={styles.section}>
-          <CustomText interBold fontSize={10} color={Colors.LightGray2} letterSpacing={1.8} style={styles.sectionLabel}>
-            TEMEL DETAYLAR
-          </CustomText>
+          <View style={styles.fieldsStack}>
+            <FormInput label="İşletme adı" value={businessName} onChangeText={setBusinessName} height={62} style={styles.input} />
 
-          <View style={styles.card}>
-            <FormInput
-              label="Isletme Adi"
-              value={businessName}
-              onChangeText={setBusinessName}
-              height={62}
-              style={styles.input}
-              backgroundColor={Colors.BrandBackground}
-              borderColor="transparent"
-            />
+            <FormInput label="Açıklama" value={description} onChangeText={setDescription} multiline height={120} style={styles.input} />
 
-            <FormInput
-              label="Aciklama"
-              value={description}
-              onChangeText={setDescription}
-              multiline
-              height={120}
-              style={styles.input}
-              backgroundColor={Colors.BrandBackground}
-              borderColor="transparent"
-            />
+            <View style={styles.categoryGroup}>
+              <CustomText bold fontSize={11} color={Colors.LightGray2} letterSpacing={1}>
+                Kategori
+              </CustomText>
+              <View style={styles.categoriesGrid}>
+                {BUSINESS_CATEGORIES.map((cat) => {
+                  const isSelected = category === cat;
+                  return (
+                    <Pressable key={cat} style={[styles.categoryChip, isSelected && styles.categoryChipActive]} onPress={() => setCategory(cat)}>
+                      <CustomText bold fontSize={11} color={isSelected ? Colors.White : Colors.LightGray2}>
+                        {cat}
+                      </CustomText>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+
+            <FormInput label="Telefon numarası" value={phone} onChangeText={setPhone} keyboardType="phone-pad" height={62} style={styles.input} />
+
+            <FormInput label="WhatsApp numarası" value={whatsappNumber} onChangeText={setWhatsappNumber} keyboardType="phone-pad" height={62} style={styles.input} />
+
+            <FormInput label="Website / Sosyal Medya Linkleri" value={socialLinksText} onChangeText={setSocialLinksText} placeholder={LINKS_PLACEHOLDER} multiline height={132} style={styles.input} />
           </View>
         </View>
 
         <View style={styles.section}>
           <View style={styles.sectionRow}>
-            <CustomText interBold fontSize={10} color={Colors.LightGray2} letterSpacing={1.8} style={styles.sectionLabel}>
-              GALERI
+            <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={1.8} style={styles.sectionLabel}>
+              GALERİ
             </CustomText>
-            <CustomText interBold fontSize={10} color="rgba(80,83,89,0.64)" letterSpacing={1.2}>
+            <CustomText bold fontSize={10} color="rgba(80,83,89,0.64)" letterSpacing={1.2}>
               {galleryCountLabel.toUpperCase()}
             </CustomText>
           </View>
@@ -166,8 +214,8 @@ export default function BusinessInfoScreen() {
           <View style={styles.galleryGrid}>
             <Pressable style={({ pressed }) => [styles.addImageCard, pressed && styles.pressed]} onPress={handleAddImage}>
               <Ionicons name="add" size={28} color={Colors.Gold} />
-              <CustomText interBold fontSize={10} color={Colors.Gold} letterSpacing={0.8} style={styles.addImageLabel}>
-                Gorsel Ekle
+              <CustomText bold fontSize={10} color={Colors.Gold} letterSpacing={0.8} style={styles.addImageLabel}>
+                Görsel ekle
               </CustomText>
             </Pressable>
 
@@ -178,7 +226,7 @@ export default function BusinessInfoScreen() {
         </View>
 
         <View style={styles.section}>
-          <CustomText interBold fontSize={10} color={Colors.LightGray2} letterSpacing={1.8} style={styles.sectionLabel}>
+          <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={1.8} style={styles.sectionLabel}>
             KONUM
           </CustomText>
 
@@ -193,26 +241,20 @@ export default function BusinessInfoScreen() {
 
               <Pressable style={({ pressed }) => [styles.changeLocationButton, pressed && styles.pressed]} onPress={handleChangeLocation}>
                 <Ionicons name="location-outline" size={14} color={Colors.BrandPrimary} />
-                <CustomText interBold fontSize={10} color={Colors.BrandPrimary} letterSpacing={0.7}>
-                  Konumu Degistir
+                <CustomText bold fontSize={10} color={Colors.BrandPrimary} letterSpacing={0.7}>
+                  Konumu değiştir
                 </CustomText>
               </Pressable>
             </View>
 
             <View style={styles.locationBody}>
-              <CustomText interMedium fontSize={14} color={Colors.BrandPrimary} style={styles.addressText}>
+              <CustomText medium fontSize={14} color={Colors.BrandPrimary} style={styles.addressText}>
                 {address}
               </CustomText>
             </View>
           </View>
         </View>
-
-        <Pressable style={({ pressed }) => [styles.archiveButton, pressed && styles.pressed]} onPress={handleArchive}>
-          <CustomText interBold fontSize={10} color={Colors.ErrorColor} letterSpacing={1.8}>
-            ISLETME PROFILINI ARSIVLE
-          </CustomText>
-        </Pressable>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </View>
   );
 }
@@ -281,20 +323,32 @@ const styles = StyleSheet.create({
   sectionLabel: {
     paddingHorizontal: 2,
   },
-  card: {
-    backgroundColor: Colors.White,
-    borderRadius: 22,
-    padding: 18,
+  fieldsStack: {
     gap: 16,
-    shadowColor: Colors.Black,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.04,
-    shadowRadius: 24,
-    elevation: 3,
   },
   input: {
     borderRadius: 18,
     minHeight: 62,
+  },
+  categoryGroup: {
+    gap: 10,
+  },
+  categoriesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  categoryChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: Colors.BorderColor,
+    backgroundColor: Colors.BrandBackground,
+  },
+  categoryChipActive: {
+    backgroundColor: Colors.BrandPrimary,
+    borderColor: Colors.BrandPrimary,
   },
   galleryGrid: {
     flexDirection: "row",
@@ -400,16 +454,6 @@ const styles = StyleSheet.create({
   },
   addressText: {
     lineHeight: 22,
-  },
-  archiveButton: {
-    minHeight: 56,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "rgba(255,59,48,0.18)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 8,
-    backgroundColor: "rgba(255,59,48,0.02)",
   },
   pressed: {
     opacity: 0.88,

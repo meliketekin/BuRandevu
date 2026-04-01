@@ -9,16 +9,7 @@ import useAuthStore from "@/store/auth-store";
 import CustomText from "@/components/high-level/custom-text";
 import { Colors } from "@/constants/colors";
 import Validator from "@/infrastructures/validation";
-
-const CATEGORIES = [
-  "Berber",
-  "Kuaför",
-  "Güzellik Salonu",
-  "Tırnak Salonu",
-  "Spa & Masaj",
-  "Dövme & Piercing",
-  "Diğer",
-];
+import { BUSINESS_CATEGORIES } from "@/enums/business-category-enum";
 
 export default function BusinessInfoForm() {
   const [state, setState] = useState({
@@ -111,7 +102,7 @@ export default function BusinessInfoForm() {
                   İşletme Kategorisi
                 </CustomText>
                 <View style={[styles.categoriesGrid, state.submitted && categoryError && styles.categoriesError]}>
-                  {CATEGORIES.map((cat) => (
+                  {BUSINESS_CATEGORIES.map((cat) => (
                     <Pressable
                       key={cat}
                       style={[styles.categoryChip, state.category === cat && styles.categoryChipActive]}

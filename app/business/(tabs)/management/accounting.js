@@ -62,7 +62,7 @@ function SegmentedButton({ active, label, onPress }) {
   return (
     <Pressable style={({ pressed }) => [styles.segmentButton, active && styles.segmentButtonActive, pressed && styles.pressed]} onPress={onPress}>
       <CustomText
-        interBold
+        bold
         fontSize={11}
         color={active ? Colors.White : Colors.LightGray2}
         letterSpacing={0.8}
@@ -91,7 +91,7 @@ function EmployeeEarningCard({ employee }) {
           <CustomText bold fontSize={15} color={Colors.BrandPrimary}>
             {employee.name}
           </CustomText>
-          <CustomText interBold fontSize={10} color={Colors.LightGray2} letterSpacing={1.1}>
+          <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={1.1}>
             {employee.role.toUpperCase()}
           </CustomText>
         </View>
@@ -101,7 +101,7 @@ function EmployeeEarningCard({ employee }) {
         <CustomText extraBold fontSize={16} color={Colors.Gold}>
           {employee.totalRevenue}
         </CustomText>
-        <CustomText interBold fontSize={10} color="#10B981" letterSpacing={0.6}>
+        <CustomText bold fontSize={10} color="#10B981" letterSpacing={0.6}>
           {employee.completedThisWeek} GOREV TAMAMLANDI
         </CustomText>
       </View>
@@ -118,7 +118,7 @@ function SummaryCard({ dark, icon, label, value }) {
 
       <View style={styles.summaryTextWrap}>
         <CustomText
-          interBold
+          bold
           fontSize={10}
           color={dark ? "rgba(255,255,255,0.56)" : Colors.LightGray2}
           letterSpacing={1.2}
@@ -169,13 +169,13 @@ export default function AccountingScreen() {
             <CustomText extraBold fontSize={22} color={Colors.BrandPrimary} style={styles.headerTitle}>
               Muhasebe
             </CustomText>
-            <CustomText interSemiBold fontSize={11} color={Colors.LightGray2}>
+            <CustomText semibold fontSize={11} color={Colors.LightGray2}>
               Gelir ve ekip performansi
             </CustomText>
           </View>
 
           <View style={styles.avatarButton}>
-            <CustomText interBold fontSize={12} color={Colors.BrandPrimary}>
+            <CustomText bold fontSize={12} color={Colors.BrandPrimary}>
               {getInitials("Bu Randevu")}
             </CustomText>
           </View>
@@ -183,7 +183,7 @@ export default function AccountingScreen() {
 
         <View style={styles.revenueCard}>
           <View style={styles.revenueTopRow}>
-            <CustomText interBold fontSize={12} color={Colors.LightGray2} letterSpacing={1.8}>
+            <CustomText bold fontSize={12} color={Colors.LightGray2} letterSpacing={1.8}>
               {chartData.label}
             </CustomText>
 
@@ -201,12 +201,12 @@ export default function AccountingScreen() {
             <View style={styles.revenueMetaRow}>
               <View style={styles.trendBadge}>
                 <Ionicons name="trending-up" size={14} color="#10B981" />
-                <CustomText interBold fontSize={11} color="#10B981">
+                <CustomText bold fontSize={11} color="#10B981">
                   {chartData.change}
                 </CustomText>
               </View>
 
-              <CustomText interBold fontSize={11} color={Colors.LightGray2} letterSpacing={0.6}>
+              <CustomText bold fontSize={11} color={Colors.LightGray2} letterSpacing={0.6}>
                 {chartData.comparisonLabel.toUpperCase()}
               </CustomText>
             </View>
@@ -226,7 +226,7 @@ export default function AccountingScreen() {
                   >
                     {active ? (
                       <View style={styles.chartTooltip}>
-                        <CustomText interBold fontSize={10} color={Colors.White}>
+                        <CustomText bold fontSize={10} color={Colors.White}>
                           {formatCurrency(chartData.tooltipValue)}
                         </CustomText>
                       </View>
@@ -243,7 +243,7 @@ export default function AccountingScreen() {
               return (
                 <CustomText
                   key={`${mode}-${label}-label`}
-                  interBold
+                  bold
                   fontSize={10}
                   color={active ? Colors.Gold : "rgba(80,83,89,0.74)"}
                   style={styles.chartLabel}
@@ -263,7 +263,7 @@ export default function AccountingScreen() {
           </CustomText>
 
           <Pressable style={({ pressed }) => [styles.inlineButton, pressed && styles.pressed]} onPress={() => router.push("/business/management/employees")}>
-            <CustomText interBold fontSize={10} color={Colors.Gold} letterSpacing={1.1}>
+            <CustomText bold fontSize={10} color={Colors.Gold} letterSpacing={1.1}>
               TUMUNU GOR
             </CustomText>
             <Ionicons name="chevron-forward" size={14} color={Colors.Gold} />
@@ -279,7 +279,7 @@ export default function AccountingScreen() {
         <View style={styles.divider} />
 
         <View style={styles.summaryHeaderWrap}>
-          <CustomText interBold fontSize={13} color={Colors.LightGray2} letterSpacing={1.5}>
+          <CustomText bold fontSize={13} color={Colors.LightGray2} letterSpacing={1.5}>
             FINANCIAL SUMMARY
           </CustomText>
         </View>
@@ -291,7 +291,7 @@ export default function AccountingScreen() {
 
         <Pressable style={({ pressed }) => [styles.netIncomeCard, pressed && styles.pressed]} onPress={() => Alert.alert("Net Bakiye", `${mode === "daily" ? "Gunluk" : "Aylik"} net bakiye: ${netIncome}`)}>
           <View style={styles.netIncomeTextWrap}>
-            <CustomText interBold fontSize={10} color={Colors.LightGray2} letterSpacing={1.3}>
+            <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={1.3}>
               NET BAKIYE
             </CustomText>
             <CustomText extraBold fontSize={28} color={Colors.BrandPrimary}>

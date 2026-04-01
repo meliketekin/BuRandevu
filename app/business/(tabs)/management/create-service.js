@@ -39,7 +39,7 @@ function SectionHeader({ icon, title, subtitle }) {
           {title}
         </CustomText>
         {subtitle ? (
-          <CustomText interMedium fontSize={11} color={Colors.LightGray2}>
+          <CustomText medium fontSize={11} color={Colors.LightGray2}>
             {subtitle}
           </CustomText>
         ) : null}
@@ -51,7 +51,7 @@ function SectionHeader({ icon, title, subtitle }) {
 function DurationOption({ value, active, onPress }) {
   return (
     <Pressable style={({ pressed }) => [styles.durationChip, active && styles.durationChipActive, pressed && styles.pressed]} onPress={onPress}>
-      <CustomText interBold fontSize={11} color={active ? Colors.White : Colors.BrandPrimary} letterSpacing={0.5}>
+      <CustomText bold fontSize={11} color={active ? Colors.White : Colors.BrandPrimary} letterSpacing={0.5}>
         {value} DK
       </CustomText>
     </Pressable>
@@ -113,7 +113,7 @@ export default function CreateService() {
               <CustomText extraBold fontSize={20} color={Colors.BrandPrimary}>
                 {isEditMode ? "Hizmeti Duzenle" : "Yeni Hizmet"}
               </CustomText>
-              <CustomText interMedium fontSize={13} color={Colors.LightGray2} style={styles.heroDescription}>
+              <CustomText medium fontSize={13} color={Colors.LightGray2} style={styles.heroDescription}>
                 {isEditMode
                   ? "Hizmet adi, aciklama, fiyat ve sure alanlarini guncelleyerek hizmet bilgisini duzenle."
                   : "Hizmet adi, aciklama, fiyat ve sure bilgisini ekleyerek yeni bir hizmet taslagi olustur."}
@@ -152,7 +152,7 @@ export default function CreateService() {
             <View style={styles.featureCard}>
               <View style={styles.featureCardTop}>
                 <View>
-                  <CustomText interBold fontSize={10} color={Colors.LightGray2} letterSpacing={1.1}>
+                  <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={1.1}>
                     HIZMET FIYATI
                   </CustomText>
                   <CustomText extraBold fontSize={18} color={Colors.BrandPrimary} style={styles.featureValue}>
@@ -161,7 +161,7 @@ export default function CreateService() {
                 </View>
                 <View style={styles.featureBadge}>
                   <Ionicons name="logo-usd" size={14} color={Colors.Gold} />
-                  <CustomText interBold fontSize={10} color={Colors.Gold} letterSpacing={0.8}>
+                  <CustomText bold fontSize={10} color={Colors.Gold} letterSpacing={0.8}>
                     TL
                   </CustomText>
                 </View>
@@ -186,7 +186,7 @@ export default function CreateService() {
             <View style={styles.featureCard}>
               <View style={styles.durationTopRow}>
                 <View>
-                  <CustomText interBold fontSize={10} color={Colors.LightGray2} letterSpacing={1.1}>
+                  <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={1.1}>
                     SEANS SURESI
                   </CustomText>
                   <CustomText extraBold fontSize={22} color={Colors.BrandPrimary} style={styles.featureValue}>
@@ -195,7 +195,7 @@ export default function CreateService() {
                 </View>
                 <View style={styles.durationPill}>
                   <Ionicons name="flash-outline" size={14} color={Colors.Gold} />
-                  <CustomText interBold fontSize={10} color={Colors.Gold} letterSpacing={0.8}>
+                  <CustomText bold fontSize={10} color={Colors.Gold} letterSpacing={0.8}>
                     HIZLI SECIM
                   </CustomText>
                 </View>
@@ -213,7 +213,7 @@ export default function CreateService() {
                 </Pressable>
 
                 <View style={styles.stepperValue}>
-                  <CustomText interBold fontSize={10} color={Colors.LightGray2} letterSpacing={1.1}>
+                  <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={1.1}>
                     OZEL SURE
                   </CustomText>
                   <CustomText extraBold fontSize={18} color={Colors.BrandPrimary}>
