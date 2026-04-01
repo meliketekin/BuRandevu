@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/colors";
+import { DEFAULT_FORM_CONTROL_HEIGHT } from "@/constants/form-field";
 import general from "@/utils/general";
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import { Animated, Pressable, StyleSheet, View } from "react-native";
@@ -22,17 +23,19 @@ const CustomSelect = ({
   isClearable = false,
   onClear,
   noIcon = false,
-  height = 62,
+  height,
   duration = 300,
   backgroundColor,
   borderColor,
 }) => {
   const hasValue = !general.isNullOrEmpty(value);
 
+  const resolvedHeight = useMemo(() => height ?? DEFAULT_FORM_CONTROL_HEIGHT, [height]);
+
   const APPROX_LABEL_LINE_HEIGHT = 22;
   const idleTranslateY = useMemo(
-    () => Math.max(0, Math.round((height - APPROX_LABEL_LINE_HEIGHT) / 2)),
-    [height],
+    () => Math.max(0, Math.round((resolvedHeight - APPROX_LABEL_LINE_HEIGHT) / 2)),
+    [resolvedHeight],
   );
 
   const transY = useRef(new Animated.Value(hasValue ? 8 : idleTranslateY));
@@ -90,7 +93,7 @@ const CustomSelect = ({
         {
           borderColor: error ? Colors.ErrorColor : borderColor || Colors.InputBorderColor,
           backgroundColor: backgroundColor ?? Colors.InputBackground,
-          height,
+          height: resolvedHeight,
           opacity: disabled ? 0.4 : 1,
         },
       ]}

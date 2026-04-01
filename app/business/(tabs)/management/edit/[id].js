@@ -14,11 +14,11 @@ export default function EditEmployee() {
 
   return (
     <EmployeeFormScreen
-      title="Calisani Duzenle"
-      saveButtonLabel="Degisiklikleri Kaydet"
+      title="Çalışanı düzenle"
+      saveButtonLabel="Değişiklikleri kaydet"
       submitMessage={{
-        title: "Guncellendi",
-        description: "Calisan bilgileri guncellendi.",
+        title: "Güncellendi",
+        description: "Çalışan bilgileri güncellendi.",
       }}
       employee={employee}
     />

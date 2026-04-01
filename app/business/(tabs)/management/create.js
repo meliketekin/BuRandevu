@@ -3,11 +3,11 @@ import EmployeeFormScreen from "./employee-form-screen";
 export default function CreateEmployee() {
   return (
     <EmployeeFormScreen
-      title="Calisan Ekle"
-      saveButtonLabel="Calisani Kaydet"
+      title="Çalışan ekle"
+      saveButtonLabel="Çalışanı kaydet"
       submitMessage={{
-        title: "Taslak Kaydedildi",
-        description: "Yeni calisan formu hazirlandi.",
+        title: "Taslak kaydedildi",
+        description: "Yeni çalışan formu hazırlandı.",
       }}
     />
   );

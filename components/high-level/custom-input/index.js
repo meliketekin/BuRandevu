@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/colors";
+import { DEFAULT_FORM_CONTROL_HEIGHT, DEFAULT_FORM_MULTILINE_HEIGHT } from "@/constants/form-field";
 import general from "@/utils/general";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, StyleSheet, TextInput, View } from "react-native";
@@ -27,7 +28,7 @@ const FormInput = ({
   onBlur = () => {},
   onFocus,
   required,
-  height = 55,
+  height,
   errorMessage,
   inputRef,
   errorTextStyle,
@@ -35,12 +36,22 @@ const FormInput = ({
   backgroundColor,
   borderColor,
 }) => {
-  /** ~16px Urbanist için; idle’da tek satırda label alan içinde dikey ortalı */
+  const resolvedHeight = useMemo(
+    () => (multiline ? height ?? DEFAULT_FORM_MULTILINE_HEIGHT : height ?? DEFAULT_FORM_CONTROL_HEIGHT),
+    [multiline, height],
+  );
+
+  /** Label boşta konumu: verilen / varsayılan yüksekliğe göre dikey ortalama */
   const APPROX_LABEL_LINE_HEIGHT = 22;
-  const idleTranslateY = useMemo(() => {
-    if (multiline) return 17;
-    return Math.max(0, Math.round((height - APPROX_LABEL_LINE_HEIGHT) / 2));
-  }, [height, multiline]);
+  const labelLayoutHeight = useMemo(() => {
+    if (multiline) return 20 + resolvedHeight + 15;
+    return resolvedHeight;
+  }, [multiline, resolvedHeight]);
+
+  const idleTranslateY = useMemo(
+    () => Math.max(0, Math.round((labelLayoutHeight - APPROX_LABEL_LINE_HEIGHT) / 2)),
+    [labelLayoutHeight],
+  );
 
   const transY = useRef(
     new Animated.Value(
@@ -123,7 +134,17 @@ const FormInput = ({
   const fontFamily = "Urbanist_400Regular";
 
   return (
-    <Animated.View style={[styles.container, style, { borderColor: error ? Colors.ErrorColor : borderColor || Colors.InputBorderColor, backgroundColor: backgroundColor ?? Colors.InputBackground }]}>
+    <Animated.View
+      style={[
+        styles.container,
+        style,
+        {
+          minHeight: labelLayoutHeight,
+          borderColor: error ? Colors.ErrorColor : borderColor || Colors.InputBorderColor,
+          backgroundColor: backgroundColor ?? Colors.InputBackground,
+        },
+      ]}
+    >
       {label && (
         <Animated.View
           style={[
@@ -146,7 +167,7 @@ const FormInput = ({
             styles.input,
             {
               color: Colors.TextColor,
-              height: multiline ? 95 : height,
+              height: resolvedHeight,
               textAlignVertical: multiline ? "top" : "center",
               marginTop: multiline && 20,
               marginBottom: multiline ? 15 : 0,
@@ -195,10 +216,9 @@ const FormInput = ({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 8,
+    borderRadius: 18,
     width: "100%",
     alignSelf: "center",
-    minHeight: 56,
     borderWidth: 1,
     zIndex: -1,
   },

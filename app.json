@@ -17,7 +17,10 @@
       "bundleIdentifier": "com.burandevu",
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "İşletme fotoğrafı çekmek için kamera erişimi gerekiyor.",
+        "NSPhotoLibraryUsageDescription": "İşletme galerisi için fotoğraf erişimi gerekiyor.",
+        "NSPhotoLibraryAddUsageDescription": "Çekilen fotoğrafları kütüphaneye kaydetmek için erişim gerekiyor."
       }
     },
     "android": {
@@ -26,7 +29,13 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -39,7 +48,14 @@
     "owner": "bu-randevu",
     "plugins": [
       "@react-native-firebase/app",
-      "@react-native-firebase/auth"
+      "@react-native-firebase/auth",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "İşletme galerisi için fotoğraf erişimi gerekiyor.",
+          "cameraPermission": "İşletme fotoğrafı çekmek için kamera erişimi gerekiyor."
+        }
+      ]
     ]
   }
 }

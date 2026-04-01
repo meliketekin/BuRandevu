@@ -29,7 +29,7 @@ function StatCard({ label, value, icon, highlighted }) {
 
 function ServiceCard({ item }) {
   return (
-    <Pressable style={({ pressed }) => [styles.serviceCard, pressed && styles.pressed]} onPress={() => Alert.alert("Yakinda", `${item.title} detayi daha sonra baglanacak.`)}>
+    <Pressable style={({ pressed }) => [styles.serviceCard, pressed && styles.pressed]} onPress={() => Alert.alert("Yakında", `${item.title} detayı daha sonra bağlanacak.`)}>
       <CustomText extraBold fontSize={16} color={Colors.White} style={styles.serviceTitle}>
         {item.title}
       </CustomText>
@@ -67,7 +67,7 @@ export default function EmployeeDetail() {
   return (
     <LayoutView
       showBackButton
-      title="Calisan Profili"
+      title="Çalışan profili"
       paddingHorizontal={24}
       backgroundColor={Colors.BrandBackground}
       rightButton={

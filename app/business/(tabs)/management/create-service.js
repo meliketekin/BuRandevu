@@ -128,7 +128,6 @@ export default function CreateService() {
               label="Hizmet Adi"
               value={serviceName}
               onChangeText={setServiceName}
-              height={64}
               style={styles.input}
               backgroundColor={Colors.White}
               borderColor="rgba(196,199,199,0.16)"
@@ -172,7 +171,6 @@ export default function CreateService() {
                 value={price}
                 onChangeText={updatePrice}
                 keyboardType="numeric"
-                height={64}
                 style={styles.input}
                 backgroundColor="#FCFCFD"
                 borderColor="rgba(196,199,199,0.16)"
@@ -312,7 +310,6 @@ const styles = StyleSheet.create({
   },
   input: {
     borderRadius: 18,
-    minHeight: 64,
     shadowColor: Colors.Black,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.04,

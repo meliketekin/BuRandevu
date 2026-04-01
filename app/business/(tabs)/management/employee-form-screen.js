@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Switch, View } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LayoutView from "@/components/high-level/layout-view";
@@ -14,9 +15,9 @@ const PLACEHOLDER_IMAGE =
 
 const DEFAULT_HOURS = [
   { key: "pzt", day: "Pazartesi", enabled: true, start: "09:00", end: "18:00" },
-  { key: "sal", day: "Sali", enabled: true, start: "09:00", end: "18:00" },
-  { key: "car", day: "Carsamba", enabled: true, start: "09:00", end: "18:00" },
-  { key: "per", day: "Persembe", enabled: true, start: "09:00", end: "18:00" },
+  { key: "sal", day: "Salı", enabled: true, start: "09:00", end: "18:00" },
+  { key: "car", day: "Çarşamba", enabled: true, start: "09:00", end: "18:00" },
+  { key: "per", day: "Perşembe", enabled: true, start: "09:00", end: "18:00" },
   { key: "cum", day: "Cuma", enabled: true, start: "09:00", end: "18:00" },
   { key: "cmt", day: "Cumartesi", enabled: true, start: "10:00", end: "17:00" },
   { key: "paz", day: "Pazar", enabled: false, start: "09:00", end: "18:00" },
@@ -69,19 +70,14 @@ function HourRow({ item, isLast, onToggle }) {
         <CustomText bold fontSize={15} color={item.enabled ? Colors.BrandPrimary : Colors.LightGray2}>
           {item.day}
         </CustomText>
-        <Switch
-          value={item.enabled}
-          onValueChange={onToggle}
-          trackColor={{ false: "#E5E7EB", true: Colors.Gold }}
-          thumbColor={Colors.White}
-        />
+        <Switch value={item.enabled} onValueChange={onToggle} trackColor={{ false: "#E5E7EB", true: Colors.Gold }} thumbColor={Colors.White} />
       </View>
 
       {item.enabled ? (
         <View style={styles.hoursInputsRow}>
           <View style={styles.hourChip}>
             <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={1}>
-              BASLANGIC
+              BAŞLANGIÇ
             </CustomText>
             <CustomText extraBold fontSize={14} color={Colors.BrandPrimary}>
               {item.start}
@@ -94,7 +90,7 @@ function HourRow({ item, isLast, onToggle }) {
 
           <View style={styles.hourChip}>
             <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={1}>
-              BITIS
+              BİTİŞ
             </CustomText>
             <CustomText extraBold fontSize={14} color={Colors.BrandPrimary}>
               {item.end}
@@ -131,17 +127,13 @@ function ServiceItem({ item, onRemove }) {
   );
 }
 
-export default function EmployeeFormScreen({
-  title,
-  saveButtonLabel,
-  submitMessage,
-  employee = null,
-}) {
+export default function EmployeeFormScreen({ title, saveButtonLabel, submitMessage, employee = null }) {
   const insets = useSafeAreaInsets();
   const initialHours = useMemo(() => buildHours(employee), [employee]);
   const initialServices = useMemo(() => buildServices(employee), [employee]);
 
   const [name, setName] = useState(employee?.name ?? "");
+  const [phone, setPhone] = useState(employee?.phone ?? "");
   const [hours, setHours] = useState(initialHours);
   const [services, setServices] = useState(initialServices);
 
@@ -156,58 +148,46 @@ export default function EmployeeFormScreen({
   };
 
   const addService = () => {
-    Alert.alert("Yakinda", "Hizmet secme akisi daha sonra baglanacak.");
+    Alert.alert("Yakında", "Hizmet seçme akışı daha sonra bağlanacak.");
   };
 
   const saveEmployee = () => {
-    Alert.alert(submitMessage.title, name ? `${name} icin form hazirlandi.` : submitMessage.description);
+    Alert.alert(submitMessage.title, name ? `${name} için form hazırlandı.` : submitMessage.description);
   };
 
   return (
     <LayoutView showBackButton title={title} paddingHorizontal={24} backgroundColor={Colors.BrandBackground}>
       <View style={styles.root}>
-        <ScrollView
+        <KeyboardAwareScrollView
           style={styles.scroll}
           contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 120 }]}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          enableOnAndroid
+          enableAutomaticScroll
+          extraScrollHeight={24}
+          keyboardOpeningTime={0}
         >
           <View style={styles.photoSection}>
             <View style={styles.photoWrap}>
               <View style={styles.photoFrame}>
                 <CustomImage uri={imageUri} style={styles.photo} contentFit="cover" />
               </View>
-              <Pressable style={({ pressed }) => [styles.cameraButton, pressed && styles.pressed]} onPress={() => Alert.alert("Yakinda", "Foto yukleme akisi daha sonra baglanacak.")}>
+              <Pressable style={({ pressed }) => [styles.cameraButton, pressed && styles.pressed]} onPress={() => Alert.alert("Yakında", "Foto yükleme akışı daha sonra bağlanacak.")}>
                 <Ionicons name="camera-outline" size={16} color={Colors.White} />
               </Pressable>
             </View>
-
-            <Pressable style={({ pressed }) => [styles.changePhotoBtn, pressed && styles.pressed]} onPress={() => Alert.alert("Yakinda", "Foto degistirme akisi daha sonra baglanacak.")}>
-              <CustomText bold fontSize={11} color={Colors.Gold} letterSpacing={1.2}>
-                FOTOGRAFI DEGISTIR
-              </CustomText>
-            </Pressable>
           </View>
 
           <View style={styles.section}>
-            <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={1.2} style={styles.sectionLabel}>
-              KIMLIK
-            </CustomText>
-
-            <FormInput
-              label="Ad Soyad"
-              value={name}
-              onChangeText={setName}
-              height={64}
-              style={styles.nameInput}
-              backgroundColor={Colors.White}
-              borderColor="transparent"
-            />
+            <FormInput label="Ad Soyad" value={name} onChangeText={setName} style={styles.textField} />
+            <FormInput label="Telefon numarası" value={phone} onChangeText={setPhone} keyboardType="phone-pad" style={styles.textField} />
           </View>
 
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={1.2}>
-                CALISMA SAATLERI
+                ÇALIŞMA SAATLERİ
               </CustomText>
               <CustomText bold fontSize={10} color={Colors.Gold} letterSpacing={1}>
                 PZT - PAZ
@@ -216,19 +196,14 @@ export default function EmployeeFormScreen({
 
             <View style={styles.cardSection}>
               {hours.map((item, index) => (
-                <HourRow
-                  key={item.key}
-                  item={item}
-                  isLast={index === hours.length - 1}
-                  onToggle={() => toggleDay(item.key)}
-                />
+                <HourRow key={item.key} item={item} isLast={index === hours.length - 1} onToggle={() => toggleDay(item.key)} />
               ))}
             </View>
           </View>
 
           <View style={styles.section}>
             <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={1.2} style={styles.sectionLabel}>
-              ATANAN HIZMETLER
+              ATANAN HİZMETLER
             </CustomText>
 
             <View style={styles.servicesList}>
@@ -239,12 +214,12 @@ export default function EmployeeFormScreen({
               <Pressable style={({ pressed }) => [styles.addServiceBtn, pressed && styles.pressed]} onPress={addService}>
                 <Ionicons name="add-circle-outline" size={16} color={Colors.Gold} />
                 <CustomText bold fontSize={11} color={Colors.Gold} letterSpacing={1.5}>
-                  HIZMET EKLE
+                  HİZMET EKLE
                 </CustomText>
               </Pressable>
             </View>
           </View>
-        </ScrollView>
+        </KeyboardAwareScrollView>
 
         <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 18 }]}>
           <CustomButton
@@ -315,10 +290,6 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 4,
   },
-  changePhotoBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
   section: {
     gap: 12,
   },
@@ -331,15 +302,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 2,
   },
-  nameInput: {
-    borderRadius: 18,
-    minHeight: 64,
-    shadowColor: Colors.Black,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.04,
-    shadowRadius: 24,
-    elevation: 3,
-  },
+
   cardSection: {
     backgroundColor: Colors.White,
     borderRadius: 18,
