@@ -2,14 +2,19 @@ import { Modal, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { modalStore } from "../../../stores/modal-store";
 import ConfirmModal from "../../../modals/confirm-modal";
+import SelectModal from "../../../modals/select-modal";
 import { ModalTypeEnum } from "../../../enums/modal-type-enum";
 
 /**
  * Kayıtlı modal tipleri. Yeni modal eklemek için modal-type-enum'a ekle,
  * modals/ klasörüne component ekleyip MODAL_REGISTRY'ye ekle.
+ *
+ * rawContainer: true → ModalRenderer container View'unu bypass eder;
+ *   modal kendi arkaplanını ve animasyonunu yönetir (SelectModal gibi).
  */
 const MODAL_REGISTRY = {
-  [ModalTypeEnum.ConfirmModal]: ConfirmModal,
+  [ModalTypeEnum.ConfirmModal]: { Component: ConfirmModal, animationType: "fade" },
+  [ModalTypeEnum.SelectModal]: { Component: SelectModal, animationType: "none", rawContainer: true },
 };
 
 /**
@@ -19,12 +24,13 @@ const MODAL_REGISTRY = {
 export function ModalRenderer() {
   const current = modalStore((state) => state.current);
   const close = modalStore((state) => state.close);
-  const insets = useSafeAreaInsets();
 
   if (!current) return null;
 
-  const Component = MODAL_REGISTRY[current.type];
-  if (!Component) return null;
+  const entry = MODAL_REGISTRY[current.type];
+  if (!entry) return null;
+
+  const { Component, animationType = "fade", rawContainer = false } = entry;
 
   const handleClose = () => {
     close();
@@ -35,13 +41,17 @@ export function ModalRenderer() {
     <Modal
       visible
       transparent
-      animationType="fade"
+      animationType={animationType}
       statusBarTranslucent
       onRequestClose={handleClose}
     >
-      <View style={[styles.container]}>
+      {rawContainer ? (
         <Component {...current.props} onClose={handleClose} />
-      </View>
+      ) : (
+        <View style={styles.container}>
+          <Component {...current.props} onClose={handleClose} />
+        </View>
+      )}
     </Modal>
   );
 }

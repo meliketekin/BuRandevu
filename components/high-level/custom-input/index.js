@@ -1,6 +1,6 @@
 import { Colors } from "@/constants/colors";
 import general from "@/utils/general";
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, StyleSheet, TextInput, View } from "react-native";
 import { Easing } from "react-native-reanimated";
 import CustomSvg from "../custom-svg";
@@ -35,7 +35,18 @@ const FormInput = ({
   backgroundColor,
   borderColor,
 }) => {
-  const transY = useRef(new Animated.Value(17));
+  /** ~16px Urbanist için; idle’da tek satırda label alan içinde dikey ortalı */
+  const APPROX_LABEL_LINE_HEIGHT = 22;
+  const idleTranslateY = useMemo(() => {
+    if (multiline) return 17;
+    return Math.max(0, Math.round((height - APPROX_LABEL_LINE_HEIGHT) / 2));
+  }, [height, multiline]);
+
+  const transY = useRef(
+    new Animated.Value(
+      !general.isNullOrEmpty(value) ? 8 : idleTranslateY,
+    ),
+  );
   const labelValue = useRef(new Animated.Value(0));
   const fontSizeValue = useRef(new Animated.Value(16));
 
@@ -56,10 +67,10 @@ const FormInput = ({
     setIsFocused(false);
     onBlur();
     if (value) return;
-    animateTransform(17);
+    animateTransform(idleTranslateY);
     animateLabel(0);
     animateFontSize(16);
-  }, [value]);
+  }, [value, idleTranslateY]);
 
   const animateTransform = useCallback(
     (toValue) => {
@@ -103,11 +114,11 @@ const FormInput = ({
       animateLabel(2);
       animateFontSize(12);
     } else if (general.isNullOrEmpty(value) && !isFocused) {
-      // animateTransform(17);
+      animateTransform(idleTranslateY);
       animateLabel(0);
       animateFontSize(16);
     }
-  }, [value]);
+  }, [value, isFocused, idleTranslateY]);
 
   const fontFamily = "Urbanist_400Regular";
 
@@ -121,8 +132,11 @@ const FormInput = ({
               transform: [{ translateY: transY.current }],
             },
           ]}
+          pointerEvents="none"
         >
-          <Animated.Text style={[styles.label, { color: Colors.InputPlaceholderColor, fontSize: fontSizeValue.current, fontFamily }]}>{required ? `${label} *` : label}</Animated.Text>
+          <Animated.Text style={[styles.label, { color: Colors.InputPlaceholderColor, fontSize: fontSizeValue.current, fontFamily }]}>
+            {required ? `${label} *` : label}
+          </Animated.Text>
         </Animated.View>
       )}
       <View style={styles.inputContainer}>
@@ -207,6 +221,9 @@ const styles = StyleSheet.create({
   },
   labelContainer: {
     position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
   },
   label: {
     paddingLeft: 15,

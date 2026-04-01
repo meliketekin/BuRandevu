@@ -7,6 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase";
 import FormInput from "@/components/high-level/custom-input";
+import CustomSelect from "@/components/high-level/custom-select";
 import CustomImage from "@/components/high-level/custom-image";
 import CustomText from "@/components/high-level/custom-text";
 import { Colors } from "@/constants/colors";
@@ -175,23 +176,19 @@ export default function EditBusinessInfoForm() {
 
             <FormInput label="Açıklama" value={description} onChangeText={setDescription} multiline height={120} style={styles.input} />
 
-            <View style={styles.categoryGroup}>
-              <CustomText bold fontSize={11} color={Colors.LightGray2} letterSpacing={1}>
-                Kategori
-              </CustomText>
-              <View style={styles.categoriesGrid}>
-                {BUSINESS_CATEGORIES.map((cat) => {
-                  const isSelected = category === cat;
-                  return (
-                    <Pressable key={cat} style={[styles.categoryChip, isSelected && styles.categoryChipActive]} onPress={() => setCategory(cat)}>
-                      <CustomText bold fontSize={11} color={isSelected ? Colors.White : Colors.LightGray2}>
-                        {cat}
-                      </CustomText>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
+            <CustomSelect
+              label="Kategori"
+              value={category}
+              style={styles.input}
+              selectModalProps={{
+                title: "Kategori seç",
+                items: BUSINESS_CATEGORIES,
+                selectedValue: category,
+                onSelect: (item) => setCategory(item.value),
+                isClearable: true,
+                onClear: () => setCategory(""),
+              }}
+            />
 
             <FormInput label="Telefon numarası" value={phone} onChangeText={setPhone} keyboardType="phone-pad" height={62} style={styles.input} />
 
@@ -255,6 +252,7 @@ export default function EditBusinessInfoForm() {
           </View>
         </View>
       </KeyboardAwareScrollView>
+
     </View>
   );
 }
@@ -329,26 +327,6 @@ const styles = StyleSheet.create({
   input: {
     borderRadius: 18,
     minHeight: 62,
-  },
-  categoryGroup: {
-    gap: 10,
-  },
-  categoriesGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  categoryChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: Colors.BorderColor,
-    backgroundColor: Colors.BrandBackground,
-  },
-  categoryChipActive: {
-    backgroundColor: Colors.BrandPrimary,
-    borderColor: Colors.BrandPrimary,
   },
   galleryGrid: {
     flexDirection: "row",

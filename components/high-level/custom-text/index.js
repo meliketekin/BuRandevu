@@ -63,10 +63,6 @@ const CustomText = ({
   adjustsFontSizeToFit = false,
   letterSpacing,
   onPress,
-  interRegular = false,
-  medium = false,
-  semibold = false,
-  bold = false,
 }) => {
   // Tema renklerini al
   const colors = Colors;
