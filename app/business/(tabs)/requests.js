@@ -142,27 +142,6 @@ export default function Requests() {
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingTop: 24, paddingBottom: insets.bottom + 112 }]} showsVerticalScrollIndicator={false}>
-        <View style={styles.headerSection}>
-          <View style={styles.headerTextBlock}>
-            <CustomText xs semibold color={PALETTE.tertiary} style={styles.kicker}>
-              Premium Concierge
-            </CustomText>
-            <CustomText extraBold fontSize={44} color={Colors.BrandPrimary} style={styles.pageTitle}>
-              Talepler
-            </CustomText>
-            <CustomText sm color={Colors.LightGray2} style={styles.pageSubtitle}>
-              {subtitle}
-            </CustomText>
-          </View>
-
-          <View style={styles.liveBadge}>
-            <View style={styles.liveDot} />
-            <CustomText xs semibold color={Colors.LightGray2} style={styles.liveText}>
-              Canlı Akış
-            </CustomText>
-          </View>
-        </View>
-
         {pendingCount === 0 ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyIconWrap}>

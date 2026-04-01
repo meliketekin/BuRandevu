@@ -9,9 +9,25 @@ import general from "@/utils/general";
 import CustomText from "@/components/high-level/custom-text";
 import { Colors } from "@/constants/colors";
 
-const STATS = [
-  { label: "Günlük Gelir", value: "₺4.850", change: "+12%" },
-  { label: "Aylık Gelir", value: "₺142.3k", change: "+5.4%" },
+const QUICK_ACTIONS = [
+  {
+    id: "appointments",
+    title: "Randevular Sekmesini Ac",
+    icon: "calendar-outline",
+    route: "/business/appointments",
+  },
+  {
+    id: "requests",
+    title: "Talepler Sekmesini Ac",
+    icon: "file-tray-full-outline",
+    route: "/business/requests",
+  },
+  {
+    id: "management",
+    title: "Yonetim Sekmesini Ac",
+    icon: "grid-outline",
+    route: "/business/management",
+  },
 ];
 
 const PENDING_REQUESTS = [
@@ -86,9 +102,6 @@ export default function Home() {
               <CustomText extraBold fontSize={22} color={Colors.BrandPrimary} style={styles.brandText}>
                 {businessName}
               </CustomText>
-              <CustomText sm color={Colors.LightGray2}>
-                Premium dashboard
-              </CustomText>
             </View>
           </View>
 
@@ -99,39 +112,32 @@ export default function Home() {
           </Pressable>
         </View>
 
-        <View style={styles.welcomeCard}>
-          <View style={styles.welcomeTextWrap}>
-            <CustomText xs bold color="#735C00" style={styles.kicker}>
-              BUGUNUN OZETI
-            </CustomText>
-            <CustomText bold fontSize={24} color={Colors.BrandPrimary} style={styles.welcomeTitle}>
-              {ownerName}, gunun guclu basladi.
-            </CustomText>
-            <CustomText sm color={Colors.LightGray2} style={styles.welcomeDescription}>
-              Bekleyen talepleri hizla yonet, bugunku randevulari takip et ve gelir performansini tek ekrandan gor.
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <CustomText bold fontSize={22} color={Colors.BrandPrimary}>
+              Hizli Islemler
             </CustomText>
           </View>
-          <View style={styles.welcomeBadge}>
-            <Ionicons name="trending-up-outline" size={18} color={Colors.Gold} />
-          </View>
-        </View>
 
-        <View style={styles.statsRow}>
-          {STATS.map((item) => (
-            <View key={item.label} style={styles.statCard}>
-              <CustomText xs bold color={Colors.LightGray2} style={styles.statLabel}>
-                {item.label}
-              </CustomText>
-              <View style={styles.statValueRow}>
-                <CustomText extraBold fontSize={24} color={Colors.BrandPrimary}>
-                  {item.value}
-                </CustomText>
-                <CustomText xs bold color={Colors.Green}>
-                  {item.change}
+          <View style={styles.quickActionsList}>
+          {QUICK_ACTIONS.map((item) => (
+            <Pressable
+              key={item.id}
+              style={({ pressed }) => [styles.quickActionButton, pressed && styles.pressed]}
+              onPress={() => router.push(item.route)}
+            >
+              <View style={styles.quickActionLeft}>
+                <View style={styles.quickActionIconWrap}>
+                  <Ionicons name={item.icon} size={20} color={Colors.White} />
+                </View>
+                <CustomText bold fontSize={15} color={Colors.White} style={styles.quickActionText}>
+                  {item.title}
                 </CustomText>
               </View>
-            </View>
+              <Ionicons name="chevron-forward" size={18} color={Colors.Gold} />
+            </Pressable>
           ))}
+          </View>
         </View>
 
         <View style={styles.section}>
@@ -139,37 +145,29 @@ export default function Home() {
             <CustomText bold fontSize={20} color={Colors.BrandPrimary}>
               Bekleyen Talepler (12)
             </CustomText>
-            <Pressable onPress={() => router.push("/business/talepler")}>
-              <CustomText xs bold color={Colors.Gold}>
-                Tumunu Gor
-              </CustomText>
-            </Pressable>
           </View>
 
           <View style={styles.sectionBody}>
             {PENDING_REQUESTS.map((request) => (
               <View key={request.id} style={styles.requestCard}>
-                <View style={styles.requestLeft}>
-                  <View style={styles.requestAvatar}>
-                    <CustomText xs bold color={Colors.BrandPrimary}>
-                      {request.initials}
-                    </CustomText>
+                <View style={styles.requestHeaderRow}>
+                  <View style={styles.requestLeft}>
+                    <View style={styles.requestAvatar}>
+                      <CustomText xs bold color={Colors.BrandPrimary}>
+                        {request.initials}
+                      </CustomText>
+                    </View>
+                    <View style={styles.requestInfo}>
+                      <CustomText bold sm color={Colors.BrandPrimary}>
+                        {request.name}
+                      </CustomText>
+                      <CustomText minx color={Colors.LightGray2}>
+                        {request.detail} • {request.time}
+                      </CustomText>
+                    </View>
                   </View>
-                  <View style={styles.requestInfo}>
-                    <CustomText bold sm color={Colors.BrandPrimary}>
-                      {request.name}
-                    </CustomText>
-                    <CustomText minx color={Colors.LightGray2}>
-                      {request.detail} • {request.time}
-                    </CustomText>
-                  </View>
-                </View>
 
-                <View style={styles.requestActions}>
-                  <Pressable style={({ pressed }) => [styles.chatButton, pressed && styles.pressed]}>
-                    <Ionicons name="chatbubble-ellipses-outline" size={16} color={Colors.Gold} />
-                  </Pressable>
-                  <View style={styles.inlineActionGroup}>
+                  <View style={styles.requestTopActions}>
                     <Pressable style={({ pressed }) => [styles.approveButton, pressed && styles.pressed]}>
                       <CustomText minx bold color={Colors.White}>
                         Onayla
@@ -179,6 +177,9 @@ export default function Home() {
                       <CustomText minx bold color={Colors.LightGray2}>
                         Red
                       </CustomText>
+                    </Pressable>
+                    <Pressable style={({ pressed }) => [styles.requestPhoneButton, pressed && styles.pressed]}>
+                      <Ionicons name="call-outline" size={16} color={Colors.Gold} />
                     </Pressable>
                   </View>
                 </View>
@@ -192,11 +193,6 @@ export default function Home() {
             <CustomText bold fontSize={20} color={Colors.BrandPrimary}>
               Bugunku Randevular (8)
             </CustomText>
-            <Pressable onPress={() => router.push("/business/randevular")}>
-              <CustomText xs bold color={Colors.Gold}>
-                Tumunu Gor
-              </CustomText>
-            </Pressable>
           </View>
 
           <View style={styles.appointmentsCard}>
@@ -306,69 +302,44 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(20,20,20,0.05)",
   },
-  welcomeCard: {
-    backgroundColor: Colors.White,
-    borderRadius: 24,
-    padding: 18,
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
+  quickActionsList: {
+    gap: 12,
+    marginHorizontal: -4,
+  },
+  quickActionButton: {
+    minHeight: 52,
+    borderRadius: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    backgroundColor: Colors.BrandPrimary,
     borderWidth: 1,
-    borderColor: "rgba(20,20,20,0.04)",
+    borderColor: "rgba(20,20,20,0.12)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     shadowColor: Colors.Black,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 20,
-    elevation: 3,
-    gap: 16,
+    shadowOpacity: 0.04,
+    shadowRadius: 14,
+    elevation: 2,
   },
-  welcomeTextWrap: {
+  quickActionLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
     flex: 1,
-    gap: 8,
+    paddingRight: 10,
   },
-  kicker: {
-    letterSpacing: 2,
+  quickActionText: {
+    letterSpacing: -0.2,
   },
-  welcomeTitle: {
-    lineHeight: 30,
-  },
-  welcomeDescription: {
-    lineHeight: 20,
-  },
-  welcomeBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(212,175,55,0.12)",
+  quickActionIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.1)",
     alignItems: "center",
     justifyContent: "center",
-  },
-  statsRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: Colors.White,
-    borderRadius: 22,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: "rgba(20,20,20,0.04)",
-    shadowColor: Colors.Black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 18,
-    elevation: 3,
-    gap: 6,
-  },
-  statLabel: {
-    textTransform: "uppercase",
-    letterSpacing: 1.1,
-  },
-  statValueRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 8,
   },
   section: {
     gap: 12,
@@ -395,10 +366,17 @@ const styles = StyleSheet.create({
     elevation: 3,
     gap: 14,
   },
+  requestHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
   requestLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
+    flex: 1,
   },
   requestAvatar: {
     width: 42,
@@ -412,23 +390,18 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
-  requestActions: {
+  requestTopActions: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
+    gap: 8,
   },
-  chatButton: {
+  requestPhoneButton: {
     width: 34,
     height: 34,
     borderRadius: 17,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(212,175,55,0.1)",
-  },
-  inlineActionGroup: {
-    flexDirection: "row",
-    gap: 8,
   },
   approveButton: {
     minWidth: 68,

@@ -19,7 +19,7 @@ const CARD_IMAGES = {
   business:
     "https://lh3.googleusercontent.com/aida-public/AB6AXuBq1RJ7jSGWmb8frLV39Fw_tUZPgxNtL3JBsjQTjnz8a4XfBWa1i8boWNHXagpPZDkxtfZzqkAsf4Bv_DFm7criBFEtYs-6Kkk9J6P4dSBEqzFsbVOl0u2woYKPYt5Iax-zb6K5abSiWSp7HGXQvh1P082IQg-Q3ILWTqfcNeyddIUeNc6ccvJhxwguPwN7bfmbFaHiru1XISaGjNFmphdFsvrGj_8xxzS5mHElhCG87bGoPOUFeo7EMaay-F4NmUTW6U73lpL7Ah0",
   hours:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuCNTZIldmmAeJkTud1ZBZvSdFZRsaEf5re2ydq2d573L76DDtSPq3G6x3-VsIDVdzef_DRgHGV4_JuDzdOai8ePQ_88zUkQ60V7jPMwZDrFVDn4cDhe2tR8YtmPekMg1E3AllD9jtPPig1RsjSq45Gds8kzdCEPce5LbkcxPxQT-JDGHBFnQTQBteGAQskcUOCD7Qcbwg1gslaRnfDhvFtjYTXT_G69CbUF7qHwkuLBDRD-ywrBAV8dig5VZEdDeKZXe0BlDPkiwt4",
+    "https://st2.depositphotos.com/8468478/12253/i/600/depositphotos_122530756-stock-photo-black-clock-isolated-on-white.jpg",
   accounting:
     "https://lh3.googleusercontent.com/aida-public/AB6AXuA8Qmk6_BeJlpR4yJZoROnyu8LS7JlGh2W-xVT7mepI0cuJjAus5Pqt4RKvj1XcmRJqexmAvSGKVI7wOyJCSTr8NnpEZlCrcqTaKuq1wP8pQcfmkG-c4q7OqwqrObVWSxLrUCfedtHs2O_EHlZfFZ4_4k-WdTbkB2K1OQPNrNfk-PiIZZXJuCXOg-YgwKmxQH5SpXrP2dVN1ZJuM2Ws1UoCC6nAoBi-TR_RxFdEjalw68RM0yqIoXzrXg43S0oxRjlekG0Ig7AGlUw",
 };
@@ -82,7 +82,7 @@ export default function Management() {
       {
         key: "employees",
         title: isAdmin ? "Calisanlar" : "Ekibim",
-        caption: "12 aktif ekip uyesi",
+        caption: "Çalışanlarını gör, ekle ve düzenle",
         icon: "people-outline",
         image: CARD_IMAGES.employees,
         route: "/business/management/employees",
@@ -91,7 +91,7 @@ export default function Management() {
       {
         key: "services",
         title: "Hizmetler",
-        caption: "48 katalog ogesi",
+        caption: "Hizmetlerini gör, ekle ve düzenle",
         icon: "cut-outline",
         image: CARD_IMAGES.services,
       },
@@ -101,12 +101,12 @@ export default function Management() {
         caption: "Sube profilini duzenle",
         icon: "business-outline",
         image: CARD_IMAGES.business,
-        route: "/business/profil",
+        route: "/business/management/business-info",
       },
       {
         key: "hours",
         title: "Calisma Saatleri",
-        caption: "09:00 - 21:00 aktif",
+        caption: "Calisma saatlerini gör ve düzenle",
         icon: "time-outline",
         image: CARD_IMAGES.hours,
       },
@@ -116,6 +116,7 @@ export default function Management() {
         caption: "Gunluk ciroyu incele",
         icon: "wallet-outline",
         image: CARD_IMAGES.accounting,
+        route: "/business/management/accounting",
       },
     ],
     [isAdmin],
@@ -164,18 +165,6 @@ export default function Management() {
           </Pressable>
         </View>
 
-        <View style={styles.greetingBlock}>
-          <CustomText interBold fontSize={10} color={Colors.Gold} letterSpacing={2.4}>
-            {roleLabel}
-          </CustomText>
-          <CustomText extraBold fontSize={32} color={Colors.BrandPrimary} style={styles.screenTitle}>
-            Yonetim sayfasi
-          </CustomText>
-          <CustomText interMedium sm color={Colors.LightGray2} style={styles.screenDescription}>
-            {ownerName}, ekibini, hizmetlerini ve isletme ayarlarini tek ekranda yonet.
-          </CustomText>
-        </View>
-
         <View style={styles.gridWrap}>
           <DashboardActionCard item={dashboardCards[0]} featured onPress={() => handleCardPress(dashboardCards[0])} />
 
@@ -186,58 +175,7 @@ export default function Management() {
           </View>
         </View>
 
-        <View style={styles.insightsWrap}>
-          <View style={styles.infoCard}>
-            <CustomText interBold fontSize={9} color="#A1A1AA" letterSpacing={1.8}>
-              LIVE PERFORMANCE
-            </CustomText>
 
-            <View style={styles.performanceRow}>
-              <View style={styles.performanceTextWrap}>
-                <CustomText extraBold fontSize={42} color={Colors.BrandPrimary}>
-                  84%
-                </CustomText>
-                <CustomText interMedium fontSize={13} color={Colors.LightGray2}>
-                  Gunluk kapasite dolulugu
-                </CustomText>
-              </View>
-
-              <View style={styles.trendBadge}>
-                <CustomText interBold fontSize={10} color="#0F8C57">
-                  +12% TREND
-                </CustomText>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.infoCard}>
-            <CustomText interBold fontSize={9} color="#A1A1AA" letterSpacing={1.8}>
-              PENDING TASKS
-            </CustomText>
-
-            <View style={styles.pendingContent}>
-              <View style={styles.avatarStack}>
-                {PENDING_TASKS.map((item, index) => (
-                  <View key={item.id} style={[styles.pendingAvatar, index > 0 && styles.pendingAvatarOverlap]}>
-                    <CustomText interBold fontSize={10} color={Colors.BrandPrimary}>
-                      {item.initials}
-                    </CustomText>
-                  </View>
-                ))}
-
-                <View style={[styles.pendingAvatar, styles.pendingAvatarOverlap, styles.pendingAvatarMuted]}>
-                  <CustomText interBold fontSize={10} color={Colors.LightGray2}>
-                    +3
-                  </CustomText>
-                </View>
-              </View>
-
-              <CustomText interMedium fontSize={13} color={Colors.LightGray2} style={styles.pendingText}>
-                5 izin talebi ve 2 vardiya degisikligi onay bekliyor.
-              </CustomText>
-            </View>
-          </View>
-        </View>
       </ScrollView>
     </View>
   );
@@ -305,7 +243,7 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   featuredCardShell: {
-    height: 242,
+    height: 216,
     borderRadius: 24,
     overflow: "hidden",
     backgroundColor: Colors.BrandPrimary,
@@ -317,8 +255,8 @@ const styles = StyleSheet.create({
   },
   gridCardShell: {
     width: "48.2%",
-    height: 196,
-    borderRadius: 22,
+    height: 172,
+    borderRadius: 20,
     overflow: "hidden",
     backgroundColor: Colors.BrandPrimary,
     shadowColor: Colors.Black,
@@ -331,25 +269,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cardImageStyle: {
-    borderRadius: 24,
+    borderRadius: 20,
   },
   cardOverlay: {
     flex: 1,
     justifyContent: "flex-end",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
   },
   featuredCardOverlay: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
   },
   cardIconWrap: {
     position: "absolute",
-    top: 18,
-    left: 18,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    top: 16,
+    left: 16,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: "rgba(20,20,20,0.35)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.12)",
@@ -358,18 +296,18 @@ const styles = StyleSheet.create({
   },
   cardPulseDot: {
     position: "absolute",
-    top: 11,
-    right: 11,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    top: 10,
+    right: 10,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
     backgroundColor: Colors.Gold,
   },
   cardTextWrap: {
-    gap: 4,
+    gap: 3,
   },
   cardTitle: {
-    lineHeight: 28,
+    lineHeight: 24,
   },
   cardCaption: {
     textTransform: "uppercase",

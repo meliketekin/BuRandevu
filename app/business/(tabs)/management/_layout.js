@@ -14,7 +14,7 @@ export default function ManagementLayout() {
           const routes = e.data.state?.routes;
           if (!routes) return;
           const current = routes[routes.length - 1];
-          useTabBarStore.getState().setVisible(current.name === "index");
+          useTabBarStore.getState().setVisible(current?.name === "index");
         },
       }}
     >
