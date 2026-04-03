@@ -18,6 +18,7 @@
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "İşletmenizin konumunu belirlemek için konum erişimi gerekiyor.",
         "NSCameraUsageDescription": "İşletme fotoğrafı çekmek için kamera erişimi gerekiyor.",
         "NSPhotoLibraryUsageDescription": "İşletme galerisi için fotoğraf erişimi gerekiyor.",
         "NSPhotoLibraryAddUsageDescription": "Çekilen fotoğrafları kütüphaneye kaydetmek için erişim gerekiyor."

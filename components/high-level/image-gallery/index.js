@@ -1,5 +1,5 @@
-import React, { useCallback, useState } from "react";
-import { ActionSheetIOS, Modal, Platform, Pressable, StyleSheet, View } from "react-native";
+import React, { useCallback, useMemo, useState } from "react";
+import { ActionSheetIOS, Modal, Platform, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import CustomImage from "@/components/high-level/custom-image";
@@ -9,14 +9,16 @@ import CommandBus from "@/infrastructures/command-bus/command-bus";
 import { Colors } from "@/constants/colors";
 
 const MAX_PHOTOS = 12;
+const GRID_GAP = 14;
+const GRID_COLUMNS = 3;
 
 function makeLocalPhoto(uri) {
   return { id: Date.now().toString() + Math.random().toString(36).slice(2), uri };
 }
 
-function GalleryItem({ item, onRemove, onPress }) {
+function GalleryItem({ item, onRemove, onPress, cellStyle }) {
   return (
-    <View style={styles.thumbWrap}>
+    <View style={[styles.thumbWrap, cellStyle]}>
       <Pressable style={({ pressed }) => [styles.thumbPressable, pressed && styles.pressed]} onPress={onPress}>
         <CustomImage uri={item.uri} style={styles.thumb} contentFit="cover" />
       </Pressable>
@@ -35,10 +37,18 @@ function GalleryItem({ item, onRemove, onPress }) {
  * @param {(photo: { id, uri }) => void} onAdd
  * @param {(id: string) => void} onRemove
  * @param {number}   [maxPhotos=12]
+ * @param {number}   [contentHorizontalPadding=40] – üst ekrandaki yatay padding toplamı (örn. 20+20); hücre genişliği için
  */
-function ImageGallery({ title, photos, onAdd, onRemove, maxPhotos = MAX_PHOTOS }) {
+function ImageGallery({ title, photos, onAdd, onRemove, maxPhotos = MAX_PHOTOS, contentHorizontalPadding = 40 }) {
+  const { width: windowWidth } = useWindowDimensions();
   const [viewerIndex, setViewerIndex] = useState(null);
   const [androidSheetVisible, setAndroidSheetVisible] = useState(false);
+
+  const cellStyle = useMemo(() => {
+    const gridWidth = Math.max(0, windowWidth - contentHorizontalPadding);
+    const size = (gridWidth - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
+    return { width: size, height: size, flexShrink: 0 };
+  }, [windowWidth, contentHorizontalPadding]);
 
   const pickImage = useCallback(async (source) => {
     try {
@@ -106,7 +116,7 @@ function ImageGallery({ title, photos, onAdd, onRemove, maxPhotos = MAX_PHOTOS }
 
       <View style={styles.grid}>
         {canAdd && (
-          <Pressable style={({ pressed }) => [styles.addCard, pressed && styles.pressed]} onPress={handleAdd}>
+          <Pressable style={({ pressed }) => [styles.addCard, cellStyle, pressed && styles.pressed]} onPress={handleAdd}>
             <Ionicons name="add" size={28} color={Colors.Gold} />
             <CustomText bold fontSize={10} color={Colors.Gold} letterSpacing={0.8} style={styles.addLabel}>
               Görsel ekle
@@ -117,6 +127,7 @@ function ImageGallery({ title, photos, onAdd, onRemove, maxPhotos = MAX_PHOTOS }
           <GalleryItem
             key={item.id}
             item={item}
+            cellStyle={cellStyle}
             onRemove={() => onRemove(item.id)}
             onPress={() => setViewerIndex(index)}
           />
@@ -178,10 +189,8 @@ function ImageGallery({ title, photos, onAdd, onRemove, maxPhotos = MAX_PHOTOS }
 const styles = StyleSheet.create({
   root: { gap: 12 },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: 14 },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: GRID_GAP },
   addCard: {
-    width: "30.5%",
-    aspectRatio: 1,
     borderRadius: 22,
     borderWidth: 2,
     borderStyle: "dashed",
@@ -192,7 +201,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   addLabel: { marginTop: 6, textAlign: "center" },
-  thumbWrap: { width: "30.5%", aspectRatio: 1, position: "relative" },
+  thumbWrap: { position: "relative" },
   thumbPressable: { width: "100%", height: "100%", borderRadius: 22, overflow: "hidden" },
   thumb: { width: "100%", height: "100%", borderRadius: 22 },
   removeButton: {

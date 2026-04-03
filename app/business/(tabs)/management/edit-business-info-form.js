@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
+import MapView, { Marker } from "react-native-maps";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -13,6 +14,7 @@ import CustomImage from "@/components/high-level/custom-image";
 import CustomText from "@/components/high-level/custom-text";
 import ImageGallery from "@/components/high-level/image-gallery";
 import FormBottomBar from "@/components/high-level/form-bottom-bar";
+import LocationPickerModal from "@/components/high-level/location-picker-modal";
 import { Colors } from "@/constants/colors";
 import { BUSINESS_CATEGORIES, normalizeBusinessCategory } from "@/enums/business-category-enum";
 import { CloudinaryConfig } from "@/config/app-config";
@@ -43,8 +45,10 @@ export default function EditBusinessInfoForm() {
   const [socialLinksText, setSocialLinksText] = useState("");
   const [venuePhotos, setVenuePhotos] = useState([]);
   const [servicePhotos, setServicePhotos] = useState([]);
+  const [location, setLocation] = useState(null); // { latitude, longitude }
   const [isSaving, setIsSaving] = useState(false);
   const [pendingDeleteIds, setPendingDeleteIds] = useState([]);
+  const [locationModalVisible, setLocationModalVisible] = useState(false);
 
   useEffect(() => {
     const uid = auth.currentUser?.uid;
@@ -58,6 +62,9 @@ export default function EditBusinessInfoForm() {
         setCategory(normalizeBusinessCategory(data?.category ?? ""));
         setDescription(data?.description ?? DEFAULT_DESCRIPTION);
         setAddress(data?.address ?? DEFAULT_ADDRESS);
+        if (data?.latitude && data?.longitude) {
+          setLocation({ latitude: data.latitude, longitude: data.longitude });
+        }
         setPhone(data?.phone ?? "");
         setWhatsappNumber(data?.whatsappNumber ?? "");
         if (Array.isArray(data?.socialLinks)) {
@@ -141,6 +148,7 @@ export default function EditBusinessInfoForm() {
         venuePhotos: resolvedVenue.map((r) => r.url),
         servicePhotos: resolvedService.map((r) => r.url),
         orphanedCloudinaryIds: allOrphaned,
+        ...(location && { latitude: location.latitude, longitude: location.longitude }),
       });
 
       setVenuePhotos((prev) => prev.map((p, i) => ({ ...p, downloadUrl: resolvedVenue[i].url, publicId: resolvedVenue[i].publicId })));
@@ -165,9 +173,7 @@ export default function EditBusinessInfoForm() {
     }
   };
 
-  const handleChangeLocation = () => {
-    CommandBus.sc.alertInfo("Yakında", "Konum seçme akışı daha sonra bağlanacak.", 2400);
-  };
+  const handleChangeLocation = () => setLocationModalVisible(true);
 
   const handleArchive = () => {
     CommandBus.sc.alertInfo("Profili arşivle", "İşletme profilini arşivleme akışı daha sonra bağlanacak.", 2600);
@@ -195,6 +201,7 @@ export default function EditBusinessInfoForm() {
         keyboardShouldPersistTaps="handled"
         enableOnAndroid
         enableAutomaticScroll
+        enableResetScrollToCoords={false}
         extraScrollHeight={24}
         keyboardOpeningTime={0}
       >
@@ -258,12 +265,21 @@ export default function EditBusinessInfoForm() {
           </CustomText>
           <View style={styles.locationCard}>
             <View style={styles.mapWrap}>
-              <CustomImage uri={MAP_PLACEHOLDER} style={styles.mapImage} contentFit="cover" />
-              <View style={styles.mapOverlay}>
-                <View style={styles.pinWrap}>
-                  <Ionicons name="location" size={22} color={Colors.Gold} />
-                </View>
-              </View>
+              {location ? (
+                <MapView
+                  style={styles.mapImage}
+                  region={{ ...location, latitudeDelta: 0.01, longitudeDelta: 0.01 }}
+                  scrollEnabled={false}
+                  zoomEnabled={false}
+                  pitchEnabled={false}
+                  rotateEnabled={false}
+                  pointerEvents="none"
+                >
+                  <Marker coordinate={location} pinColor={Colors.Gold} />
+                </MapView>
+              ) : (
+                <CustomImage uri={MAP_PLACEHOLDER} style={styles.mapImage} contentFit="cover" />
+              )}
               <Pressable style={({ pressed }) => [styles.changeLocationButton, pressed && styles.pressed]} onPress={handleChangeLocation}>
                 <Ionicons name="location-outline" size={14} color={Colors.BrandPrimary} />
                 <CustomText bold fontSize={10} color={Colors.BrandPrimary} letterSpacing={0.7}>
@@ -286,8 +302,19 @@ export default function EditBusinessInfoForm() {
         </Pressable>
       </KeyboardAwareScrollView>
 
+      <LocationPickerModal
+        visible={locationModalVisible}
+        initialLocation={location}
+        initialAddress={address}
+        onConfirm={({ latitude, longitude, address: newAddress }) => {
+          setLocation({ latitude, longitude });
+          setAddress(newAddress);
+          setLocationModalVisible(false);
+        }}
+        onClose={() => setLocationModalVisible(false)}
+      />
 
-<FormBottomBar label="Kaydet" onPress={handleSave} loading={isSaving} />
+      <FormBottomBar label="Kaydet" onPress={handleSave} loading={isSaving} />
     </View>
   );
 }
