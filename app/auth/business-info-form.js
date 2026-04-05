@@ -3,7 +3,7 @@ import { View, Pressable, StyleSheet, Keyboard, TouchableWithoutFeedback, TextIn
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/firebase";
 import useAuthStore from "@/store/auth-store";
 import CustomText from "@/components/high-level/custom-text";
@@ -56,12 +56,10 @@ export default function BusinessInfoForm() {
     }
     updateState({ loading: true, error: "" });
     try {
-      await updateDoc(doc(db, "users", user.uid), {
-        category: state.category,
-        address: state.address,
-        description: state.description,
-        isBusinessInfoCompleted: true,
-      });
+      await Promise.all([
+        updateDoc(doc(db, "users", user.uid), { isBusinessInfoCompleted: true }),
+        setDoc(doc(db, "businesses", user.uid), { category: state.category, address: state.address, description: state.description }, { merge: true }),
+      ]);
       setBusinessInfoCompleted();
       router.replace("/business");
     } catch (err) {

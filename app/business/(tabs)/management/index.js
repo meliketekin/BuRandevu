@@ -57,7 +57,7 @@ export default function Management() {
     const uid = auth.currentUser?.uid;
     if (!uid) return;
 
-    getDoc(doc(db, "users", uid))
+    getDoc(doc(db, "businesses", uid))
       .then((snap) => {
         if (snap.exists()) {
           setUserInfo(snap.data());

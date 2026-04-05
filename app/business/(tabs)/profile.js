@@ -17,6 +17,7 @@ const PROFILE_PLACEHOLDER =
 export default function Profile() {
   const insets = useSafeAreaInsets();
   const [userInfo, setUserInfo] = useState(null);
+  const [businessInfo, setBusinessInfo] = useState(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const clearAuth = useAuthStore((s) => s.clearAuth);
 
@@ -25,6 +26,9 @@ export default function Profile() {
     if (!uid) return;
     getDoc(doc(db, "users", uid)).then((snap) => {
       if (snap.exists()) setUserInfo(snap.data());
+    });
+    getDoc(doc(db, "businesses", uid)).then((snap) => {
+      if (snap.exists()) setBusinessInfo(snap.data());
     });
   }, []);
 
@@ -38,11 +42,11 @@ export default function Profile() {
     }
   };
 
-  const businessName = userInfo?.businessName ?? "İşletme";
+  const businessName = businessInfo?.businessName ?? "İşletme";
   const ownerName = userInfo?.name ?? auth.currentUser?.displayName ?? "İşletme Sahibi";
   const email = userInfo?.email ?? auth.currentUser?.email ?? "";
-  const category = userInfo?.category ?? "";
-  const phone = userInfo?.phone ?? "";
+  const category = businessInfo?.category ?? "";
+  const phone = businessInfo?.phone ?? "";
   const avatarUri = userInfo?.photoURL ?? auth.currentUser?.photoURL ?? PROFILE_PLACEHOLDER;
   const headerHeight = insets.top + 68;
 

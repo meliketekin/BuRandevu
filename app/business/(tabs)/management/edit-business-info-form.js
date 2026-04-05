@@ -44,7 +44,7 @@ export default function EditBusinessInfoForm() {
     const uid = auth.currentUser?.uid;
     if (!uid) return;
 
-    getDoc(doc(db, "businesses", uid))
+    getDoc(doc(db, "users", uid))
       .then((snap) => {
         if (!snap.exists()) return;
         const data = snap.data();
@@ -100,14 +100,14 @@ export default function EditBusinessInfoForm() {
 
       const [resolvedVenue, resolvedService] = await Promise.all([resolvePhotos(form.venuePhotos, "venue"), resolvePhotos(form.servicePhotos, "service")]);
 
-      const existingDoc = await getDoc(doc(db, "businesses", uid));
+      const existingDoc = await getDoc(doc(db, "users", uid));
       const existingData = existingDoc.data() ?? {};
       const existingPublicIds = [...(existingData.venuePhotos ?? []).map(extractPublicId), ...(existingData.servicePhotos ?? []).map(extractPublicId)].filter(Boolean);
       const newPublicIds = new Set([...resolvedVenue.map((r) => r.publicId), ...resolvedService.map((r) => r.publicId)]);
       const nowOrphaned = existingPublicIds.filter((id) => id && !newPublicIds.has(id));
       const allOrphaned = [...new Set([...pendingDeleteIds, ...nowOrphaned])];
 
-      await updateDoc(doc(db, "businesses", uid), {
+      await updateDoc(doc(db, "users", uid), {
         businessName: form.businessName.trim(),
         category: form.category,
         description: form.description.trim(),
@@ -310,6 +310,7 @@ const styles = StyleSheet.create({
   headerRightSpacer: { width: 40, height: 40 },
   scroll: { flex: 1 },
   section: { marginBottom: 28, gap: 12 },
+  sectionRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
   sectionLabel: { paddingHorizontal: 2 },
   fieldsStack: { gap: 16 },
   input: { borderRadius: 18 },
@@ -327,6 +328,20 @@ const styles = StyleSheet.create({
   mapWrap: { height: 208, position: "relative", backgroundColor: "#EFEFEF" },
   mapImage: { width: "100%", height: "100%", opacity: 0.86 },
   mapPlaceholder: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#F5F5F5" },
+  mapOverlay: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center" },
+  pinWrap: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.BrandPrimary,
+    shadowColor: Colors.Black,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 5,
+  },
   changeLocationButton: {
     position: "absolute",
     right: 14,
@@ -341,5 +356,15 @@ const styles = StyleSheet.create({
   },
   locationBody: { padding: 18 },
   addressText: { lineHeight: 22 },
+  archiveButton: {
+    minHeight: 56,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,59,48,0.18)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+    backgroundColor: "rgba(255,59,48,0.02)",
+  },
   pressed: { opacity: 0.88, transform: [{ scale: 0.985 }] },
 });

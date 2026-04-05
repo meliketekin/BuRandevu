@@ -98,13 +98,17 @@ export default function Register() {
         email: state.email,
         userType: state.role,
         isAdmin,
-        ...(isAdmin && {
-          businessName: state.businessName,
-          phone: state.phone,
-          isBusinessInfoCompleted: false,
-        }),
+        ...(isAdmin && { isBusinessInfoCompleted: false }),
         createdAt: serverTimestamp(),
       });
+      if (isAdmin) {
+        await setDoc(doc(db, "businesses", user.uid), {
+          uid: user.uid,
+          businessName: state.businessName,
+          phone: state.phone,
+          createdAt: serverTimestamp(),
+        });
+      }
       setAuth(user, state.role, isAdmin, false);
       router.replace(isAdmin ? "/auth/business-info-form" : "/customer");
     } catch (error) {

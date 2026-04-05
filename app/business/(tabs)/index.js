@@ -75,19 +75,21 @@ const TODAY_APPOINTMENTS = [
 export default function Home() {
   const insets = useSafeAreaInsets();
   const [userInfo, setUserInfo] = useState(null);
+  const [businessInfo, setBusinessInfo] = useState(null);
 
   useEffect(() => {
     const uid = auth.currentUser?.uid;
     if (!uid) return;
 
     getDoc(doc(db, "users", uid)).then((snap) => {
-      if (snap.exists()) {
-        setUserInfo(snap.data());
-      }
+      if (snap.exists()) setUserInfo(snap.data());
+    });
+    getDoc(doc(db, "businesses", uid)).then((snap) => {
+      if (snap.exists()) setBusinessInfo(snap.data());
     });
   }, []);
 
-  const businessName = userInfo?.businessName ?? "Digital Atelier";
+  const businessName = businessInfo?.businessName ?? "Digital Atelier";
   const ownerName = userInfo?.name ?? auth.currentUser?.displayName ?? "İşletme sahibi";
 
   return (

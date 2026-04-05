@@ -1,6 +1,9 @@
+import { useEffect, useState } from "react";
 import { View, StyleSheet, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "@/firebase";
 import { useDrawerStore } from "@/stores/drawer-store";
 import { Ionicons } from "@expo/vector-icons";
 import LayoutView from "@/components/high-level/layout-view";
@@ -16,6 +19,22 @@ export default function CustomerAnaSayfa() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const openDrawerMenu = useDrawerStore((s) => s.openDrawer);
+  const [businesses, setBusinesses] = useState([]);
+  const [loadingBusinesses, setLoadingBusinesses] = useState(true);
+
+  useEffect(() => {
+    console.log("getBusinesses");
+    getDocs(collection(db, "businesses"))
+      .then((snap) => {
+        const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        console.log(docs);
+        setBusinesses(docs);
+      })
+      .catch((error) => {
+        console.log("error", error);
+      })
+      .finally(() => setLoadingBusinesses(false));
+  }, []);
 
   const handleCategoryPress = (id) => {
     router.push("/customer/home/business-list");
@@ -51,13 +70,12 @@ export default function CustomerAnaSayfa() {
             <CustomText usePrimaryColor semibold lg>
               BuRandevu
             </CustomText>
-            
           </View>
         </View>
 
         <CustomerHomeCarousel />
         <CustomerCategoryGrid onCategoryPress={handleCategoryPress} onViewAllPress={handleViewAllPress} />
-        <CustomerPopularNearYou onItemPress={handlePopularItemPress} />
+        <CustomerPopularNearYou businesses={businesses} loading={loadingBusinesses} onItemPress={handlePopularItemPress} />
       </ScrollView>
     </LayoutView>
   );
