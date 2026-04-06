@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Alert, Pressable, StyleSheet, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase";
@@ -19,11 +19,7 @@ import { Colors } from "@/constants/colors";
 import { BUSINESS_CATEGORIES, normalizeBusinessCategory } from "@/enums/business-category-enum";
 import { CloudinaryConfig } from "@/config/app-config";
 
-const INITIAL_FORM = {
-  venuePhotos: [],
-  servicePhotos: [],
-  socialLinks: [],
-};
+const SUCCESS_MESSAGE_DURATION = 2400;
 
 function extractPublicId(url) {
   if (!url || !url.includes("cloudinary.com")) return null;
@@ -31,12 +27,37 @@ function extractPublicId(url) {
   return match ? match[1] : null;
 }
 
+function buildFormState(data = {}) {
+  return {
+    businessName: data?.businessName ?? "",
+    category: normalizeBusinessCategory(data?.category ?? ""),
+    description: data?.description ?? "",
+    address: data?.address ?? "",
+    phone: data?.phone ?? "",
+    whatsappNumber: data?.whatsappNumber ?? "",
+    socialLinks: Array.isArray(data?.socialLinks) ? data.socialLinks : [],
+    venuePhotos: Array.isArray(data?.venuePhotos) ? data.venuePhotos.map((url, i) => ({ id: `venue-${i}`, uri: url, downloadUrl: url, publicId: extractPublicId(url) })) : [],
+    servicePhotos: Array.isArray(data?.servicePhotos) ? data.servicePhotos.map((url, i) => ({ id: `service-${i}`, uri: url, downloadUrl: url, publicId: extractPublicId(url) })) : [],
+    location: data?.latitude && data?.longitude ? { latitude: data.latitude, longitude: data.longitude } : null,
+  };
+}
+
+function createFormSnapshot(form, pendingDeleteIds = []) {
+  return JSON.stringify({ form, pendingDeleteIds: [...pendingDeleteIds].sort() });
+}
+
+const INITIAL_FORM = buildFormState();
+
 export default function EditBusinessInfoForm() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
   const [form, setForm] = useState(INITIAL_FORM);
   const [isSaving, setIsSaving] = useState(false);
   const [pendingDeleteIds, setPendingDeleteIds] = useState([]);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
+  const autoBackTimeoutRef = useRef(null);
+  const initialSnapshotRef = useRef(createFormSnapshot(INITIAL_FORM));
+  const allowRemoveRef = useRef(false);
 
   const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
@@ -47,21 +68,19 @@ export default function EditBusinessInfoForm() {
     getDoc(doc(db, "businesses", uid))
       .then((snap) => {
         if (!snap.exists()) return;
-        const data = snap.data();
-        setForm({
-          businessName: data?.businessName,
-          category: normalizeBusinessCategory(data?.category ?? ""),
-          description: data?.description,
-          address: data?.address,
-          phone: data?.phone,
-          whatsappNumber: data?.whatsappNumber,
-          socialLinks: Array.isArray(data?.socialLinks) ? data.socialLinks : [],
-          venuePhotos: Array.isArray(data?.venuePhotos) ? data.venuePhotos.map((url, i) => ({ id: `venue-${i}`, uri: url, downloadUrl: url, publicId: extractPublicId(url) })) : [],
-          servicePhotos: Array.isArray(data?.servicePhotos) ? data.servicePhotos.map((url, i) => ({ id: `service-${i}`, uri: url, downloadUrl: url, publicId: extractPublicId(url) })) : [],
-          location: data?.latitude && data?.longitude ? { latitude: data.latitude, longitude: data.longitude } : null,
-        });
+        const loadedForm = buildFormState(snap.data());
+        setForm(loadedForm);
+        initialSnapshotRef.current = createFormSnapshot(loadedForm);
       })
-      .catch(() => setField("businessName", "Elite Grooming Co."));
+      .catch(() => {
+        const fallbackForm = buildFormState({ businessName: "Elite Grooming Co." });
+        setForm(fallbackForm);
+        initialSnapshotRef.current = createFormSnapshot(fallbackForm);
+      });
+
+    return () => {
+      if (autoBackTimeoutRef.current) clearTimeout(autoBackTimeoutRef.current);
+    };
   }, []);
 
   const uploadPhoto = useCallback(async (uri, folder) => {
@@ -81,7 +100,53 @@ export default function EditBusinessInfoForm() {
     return { url: data.secure_url, publicId: data.public_id };
   }, []);
 
-  const handleSave = async () => {
+  const confirmPhotoRemoval = useCallback((photoType, id) => {
+    Alert.alert(
+      "Foto silinsin mi?",
+      `${photoType} galerinizden kaldırılacak. Bu işlemden emin misiniz?`,
+      [
+        { text: "Vazgeç", style: "cancel" },
+        {
+          text: "Sil",
+          style: "destructive",
+          onPress: () => {
+            if (photoType === "Mekan fotoğrafı") {
+              const removed = form.venuePhotos.find((p) => p.id === id);
+              if (removed?.publicId) setPendingDeleteIds((prev) => [...prev, removed.publicId]);
+              setField(
+                "venuePhotos",
+                form.venuePhotos.filter((p) => p.id !== id),
+              );
+              return;
+            }
+
+            const removed = form.servicePhotos.find((p) => p.id === id);
+            if (removed?.publicId) setPendingDeleteIds((prev) => [...prev, removed.publicId]);
+            setField(
+              "servicePhotos",
+              form.servicePhotos.filter((p) => p.id !== id),
+            );
+          },
+        },
+      ],
+    );
+  }, [form.servicePhotos, form.venuePhotos]);
+
+  const hasUnsavedChanges = useMemo(
+    () => createFormSnapshot(form, pendingDeleteIds) !== initialSnapshotRef.current,
+    [form, pendingDeleteIds],
+  );
+
+  const continueNavigation = useCallback((action) => {
+    allowRemoveRef.current = true;
+    if (action) {
+      navigation.dispatch(action);
+      return;
+    }
+    router.back();
+  }, [navigation]);
+
+  const handleSave = useCallback(async () => {
     const uid = auth.currentUser?.uid;
     if (!uid) {
       CommandBus.sc.alertError("Hata", "Kullanıcı bulunamadı.", 2600);
@@ -121,12 +186,18 @@ export default function EditBusinessInfoForm() {
         ...(form.location && { latitude: form.location.latitude, longitude: form.location.longitude }),
       });
 
-      setForm((prev) => ({
-        ...prev,
-        venuePhotos: prev.venuePhotos.map((p, i) => ({ ...p, downloadUrl: resolvedVenue[i].url, publicId: resolvedVenue[i].publicId })),
-        servicePhotos: prev.servicePhotos.map((p, i) => ({ ...p, downloadUrl: resolvedService[i].url, publicId: resolvedService[i].publicId })),
-      }));
+      const savedForm = {
+        ...form,
+        venuePhotos: form.venuePhotos.map((p, i) => ({ ...p, downloadUrl: resolvedVenue[i].url, publicId: resolvedVenue[i].publicId })),
+        servicePhotos: form.servicePhotos.map((p, i) => ({ ...p, downloadUrl: resolvedService[i].url, publicId: resolvedService[i].publicId })),
+      };
+
+      setForm(savedForm);
+      initialSnapshotRef.current = createFormSnapshot(savedForm);
       setPendingDeleteIds([]);
+
+      if (autoBackTimeoutRef.current) clearTimeout(autoBackTimeoutRef.current);
+      allowRemoveRef.current = true;
 
       if (allOrphaned.length > 0) {
         console.log("Silinecek publicId'ler:", allOrphaned);
@@ -137,21 +208,61 @@ export default function EditBusinessInfoForm() {
         }).catch((e) => console.warn("Cloudinary cleanup failed:", e));
       }
 
-      CommandBus.sc.alertSuccess("Kaydedildi", `${form.businessName.trim() || "İşletme"} bilgileri güncellendi.`, 2400);
+      CommandBus.sc.alertSuccess("Kaydedildi", `${form.businessName.trim() || "İşletme"} bilgileri güncellendi.`, SUCCESS_MESSAGE_DURATION);
+      autoBackTimeoutRef.current = setTimeout(() => {
+        router.back();
+      }, SUCCESS_MESSAGE_DURATION);
     } catch (err) {
       console.error("handleSave error:", err);
       CommandBus.sc.alertError("Hata", "Bilgiler kaydedilirken bir sorun oluştu. Lütfen tekrar deneyin.", 3200);
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [form, pendingDeleteIds, uploadPhoto]);
+
+  const handleAttemptLeave = useCallback((action) => {
+    if (isSaving) return;
+
+    if (!hasUnsavedChanges) {
+      continueNavigation(action);
+      return;
+    }
+
+    Alert.alert(
+      "Kaydedilmemiş değişiklikler var",
+      "Yaptığınız değişiklikler kaydedilmedi. Çıkmadan önce kaydetmek ister misiniz?",
+      [
+        { text: "Vazgeç", style: "cancel" },
+        {
+          text: "Kaydetmeden çık",
+          style: "destructive",
+          onPress: () => continueNavigation(action),
+        },
+        {
+          text: "Kaydet",
+          onPress: () => handleSave(),
+        },
+      ],
+    );
+  }, [continueNavigation, handleSave, hasUnsavedChanges, isSaving]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("beforeRemove", (event) => {
+      if (allowRemoveRef.current || isSaving || !hasUnsavedChanges) return;
+
+      event.preventDefault();
+      handleAttemptLeave(event.data.action);
+    });
+
+    return unsubscribe;
+  }, [handleAttemptLeave, hasUnsavedChanges, isSaving, navigation]);
 
   const handleChangeLocation = () => setLocationModalVisible(true);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Pressable style={({ pressed }) => [styles.backButton, pressed && styles.pressed]} onPress={() => router.back()}>
+        <Pressable style={({ pressed }) => [styles.backButton, pressed && styles.pressed]} onPress={() => handleAttemptLeave()}>
           <Ionicons name="arrow-back" size={22} color={Colors.BrandPrimary} />
         </Pressable>
         <CustomText extraBold fontSize={22} color={Colors.BrandPrimary} style={styles.headerTitle}>
@@ -206,14 +317,7 @@ export default function EditBusinessInfoForm() {
             contentHorizontalPadding={32}
             photos={form.venuePhotos}
             onAdd={(newPhotos) => setForm((prev) => ({ ...prev, venuePhotos: [...prev.venuePhotos, ...newPhotos] }))}
-            onRemove={(id) => {
-              const removed = form.venuePhotos.find((p) => p.id === id);
-              if (removed?.publicId) setPendingDeleteIds((prev) => [...prev, removed.publicId]);
-              setField(
-                "venuePhotos",
-                form.venuePhotos.filter((p) => p.id !== id),
-              );
-            }}
+            onRemove={(id) => confirmPhotoRemoval("Mekan fotoğrafı", id)}
           />
 
           <ImageGallery
@@ -221,14 +325,7 @@ export default function EditBusinessInfoForm() {
             contentHorizontalPadding={32}
             photos={form.servicePhotos}
             onAdd={(newPhotos) => setForm((prev) => ({ ...prev, servicePhotos: [...prev.servicePhotos, ...newPhotos] }))}
-            onRemove={(id) => {
-              const removed = form.servicePhotos.find((p) => p.id === id);
-              if (removed?.publicId) setPendingDeleteIds((prev) => [...prev, removed.publicId]);
-              setField(
-                "servicePhotos",
-                form.servicePhotos.filter((p) => p.id !== id),
-              );
-            }}
+            onRemove={(id) => confirmPhotoRemoval("İşlem fotoğrafı", id)}
           />
         </View>
 
