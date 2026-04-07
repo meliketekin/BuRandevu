@@ -45,7 +45,7 @@ export default function CustomerAnaSayfa() {
   };
 
   const handlePopularItemPress = (id) => {
-    // TODO: populer mekan detayına yönlendirme
+    router.push({ pathname: "/customer/home/business-detail", params: { id } });
   };
 
   return (

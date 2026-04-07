@@ -1,52 +1,147 @@
-import React, { useMemo, useState } from "react";
-import { Image, ScrollView, StyleSheet, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Linking, ScrollView, StyleSheet, View } from "react-native";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { collection, doc, getDocs, getDoc, setDoc, deleteDoc } from "firebase/firestore";
+import { auth, db } from "@/firebase";
 import LayoutView from "@/components/high-level/layout-view";
 import CustomButton from "@/components/high-level/custom-button";
 import CustomText from "@/components/high-level/custom-text";
 import CustomTouchableOpacity from "@/components/high-level/custom-touchable-opacity";
-import CustomerBusinessCategoryTabs from "@/components/high-level/customer-business-category-tabs";
 import CustomerServiceItem from "@/components/high-level/customer-service-item";
 import CustomerTeamMember from "@/components/high-level/customer-team-member";
-import { BUSINESS_ITEMS } from "@/constants/customer-businesses";
 import { Colors } from "@/constants/colors";
 
-const DETAIL_SERVICE_TABS = [
-  { id: "hair", label: "Hair" },
-  { id: "nails", label: "Nails" },
-  { id: "facial", label: "Facial" },
-  { id: "massage", label: "Massage" },
+const STATIC_RATING = "4.8";
+const STATIC_REVIEW_COUNT = 124;
+const STATIC_REVIEW_DISTRIBUTION = [
+  { label: "5", percent: 78 },
+  { label: "4", percent: 15 },
+  { label: "3", percent: 4 },
 ];
-
-const DEFAULT_SERVICE_CATALOG = {
-  hair: [{ id: "signature-cut", title: "Signature Cut & Style", description: "Kisisel analiz ile kesim, yikama ve sekillendirme hizmeti.", duration: "60 dk", price: "$80" }],
-  nails: [{ id: "classic-manicure", title: "Classic Manicure", description: "Temel tirnak bakimi ve oje uygulamasi.", duration: "40 dk", price: "$40" }],
-  facial: [{ id: "express-facial", title: "Express Facial", description: "Kisa sureli canlandirici cilt bakimi.", duration: "35 dk", price: "$55" }],
-  massage: [{ id: "relief-massage", title: "Relief Massage", description: "Kaslari rahatlatan yenileyici masaj seansi.", duration: "50 dk", price: "$75" }],
-};
+const STATIC_CLOSES_AT = "18:00'de kapanıyor";
 
 const BusinessDetail = () => {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const businessId = Array.isArray(id) ? id[0] : id;
-  const business = useMemo(() => BUSINESS_ITEMS.find((item) => item.id === businessId) ?? BUSINESS_ITEMS[0], [businessId]);
-  const [selectedServiceCategory, setSelectedServiceCategory] = useState(DETAIL_SERVICE_TABS[0].id);
-  const teamMembers = business.team ?? business.staffImages?.map((imageUri, index) => ({ id: `member-${index}`, name: `Uzman ${index + 1}`, imageUri })) ?? [];
-  const serviceCatalog = business.services ?? DEFAULT_SERVICE_CATALOG;
 
-  const serviceItems = serviceCatalog[selectedServiceCategory] ?? [];
-  const selectedService = serviceItems[0] ?? DEFAULT_SERVICE_CATALOG.hair[0];
+  const [business, setBusiness] = useState(null);
+  const [services, setServices] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+
+  useEffect(() => {
+    if (!businessId) return;
+
+    const todayIndex = String(new Date().getDay());
+    const uid = auth.currentUser?.uid;
+
+    const favRef = uid ? getDoc(doc(db, "users", uid, "favorites", businessId)) : Promise.resolve(null);
+
+    Promise.all([
+      getDoc(doc(db, "businesses", businessId)),
+      getDocs(collection(db, "users", businessId, "services")),
+      getDocs(collection(db, "users", businessId, "employees")),
+      favRef,
+    ])
+      .then(([businessSnap, servicesSnap, employeesSnap, favSnap]) => {
+        if (businessSnap.exists()) {
+          setBusiness({ id: businessSnap.id, ...businessSnap.data() });
+        }
+
+        setServices(
+          servicesSnap.docs
+            .map((d) => {
+              const data = d.data();
+              return {
+                id: d.id,
+                title: data.name,
+                description: data.description ?? "",
+                duration: `${data.durationMinutes} dk`,
+                price: `₺${Number(data.price).toLocaleString("tr-TR")}`,
+                isActive: data.isActive ?? true,
+              };
+            })
+            .filter((s) => s.isActive),
+        );
+
+        setTeamMembers(
+          employeesSnap.docs.map((d) => {
+            const data = d.data();
+            return {
+              id: d.id,
+              name: data.name,
+              imageUri: data.photoUrl ?? null,
+              active: data.workingHours?.[todayIndex]?.enabled ?? false,
+            };
+          }),
+        );
+
+        if (favSnap?.exists()) {
+          setIsFavorite(true);
+        }
+      })
+      .catch((err) => console.error("BusinessDetail load error:", err))
+      .finally(() => setLoading(false));
+  }, [businessId]);
+
+  const handleToggleFavorite = async () => {
+    const uid = auth.currentUser?.uid;
+    if (!uid || favoriteLoading) return;
+
+    setFavoriteLoading(true);
+    const favRef = doc(db, "users", uid, "favorites", businessId);
+
+    try {
+      if (isFavorite) {
+        await deleteDoc(favRef);
+        setIsFavorite(false);
+      } else {
+        await setDoc(favRef, { businessId, savedAt: new Date() });
+        setIsFavorite(true);
+      }
+    } catch (err) {
+      console.error("Favorite toggle error:", err);
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
+
+  const handleOpenMaps = (address) => {
+    const query = encodeURIComponent(address);
+    Linking.openURL(`https://maps.google.com/?q=${query}`);
+  };
+
+  const title = business?.businessName ?? "İşletme";
+  const location = business?.address ?? "";
+  const galleryImages = Array.isArray(business?.venuePhotos) ? business.venuePhotos : [];
+  const firstService = services[0] ?? null;
+
+  if (loading) {
+    return (
+      <LayoutView showBackButton title="" paddingHorizontal={0}>
+        <ActivityIndicator size="large" color={Colors.BrandPrimary} style={styles.loader} />
+      </LayoutView>
+    );
+  }
 
   return (
     <LayoutView
       showBackButton
-      title={business.title}
+      title={title}
       rightButton={
-        <CustomTouchableOpacity activeOpacity={0.8}>
-          <Ionicons name="bookmark-outline" size={22} color={Colors.BrandPrimary} />
+        <CustomTouchableOpacity activeOpacity={0.7} onPress={handleToggleFavorite} disabled={favoriteLoading}>
+          <Ionicons
+            name={isFavorite ? "bookmark" : "bookmark-outline"}
+            size={22}
+            color={isFavorite ? Colors.BrandGold : Colors.BrandPrimary}
+          />
         </CustomTouchableOpacity>
       }
       style={styles.contentWrapper}
@@ -56,31 +151,44 @@ const BusinessDetail = () => {
         contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 96 }]}
         showsVerticalScrollIndicator={false}
       >
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryContent}>
-          {business.galleryImages?.map((imageUri, index) => (
-            <View key={`${business.id}-gallery-${index}`} style={[styles.galleryCard, index > 0 && styles.galleryCardSmall]}>
-              <Image source={{ uri: imageUri }} style={styles.galleryImage} resizeMode="cover" />
-            </View>
-          ))}
-        </ScrollView>
+        {galleryImages.length > 0 && (
+          <>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryContent}>
+              {galleryImages.map((imageUri, index) => (
+                <View key={`gallery-${index}`} style={[styles.galleryCard, index > 0 && styles.galleryCardSmall]}>
+                  <Image
+                    source={{ uri: imageUri }}
+                    style={styles.galleryImage}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                    transition={200}
+                    placeholder={styles.galleryPlaceholder}
+                  />
+                </View>
+              ))}
+            </ScrollView>
 
-        <View style={styles.dotsRow}>
-          {business.galleryImages?.map((_, index) => (
-            <View key={`${business.id}-dot-${index}`} style={[styles.dot, index === 0 ? styles.dotActive : null]} />
-          ))}
-        </View>
+            <View style={styles.dotsRow}>
+              {galleryImages.map((_, index) => (
+                <View key={`dot-${index}`} style={[styles.dot, index === 0 ? styles.dotActive : null]} />
+              ))}
+            </View>
+          </>
+        )}
 
         <View style={styles.sectionCard}>
           <CustomText extraBold headerxl color={Colors.BrandPrimary}>
-            {business.title}
+            {title}
           </CustomText>
 
-          <View style={styles.locationRow}>
-            <Ionicons name="location-outline" size={18} color={Colors.LightGray} />
-            <CustomText sm color={Colors.LightGray} style={styles.locationText}>
-              {business.location}
-            </CustomText>
-          </View>
+          {!!location && (
+            <View style={styles.locationRow}>
+              <Ionicons name="location-outline" size={18} color={Colors.LightGray} />
+              <CustomText sm color={Colors.LightGray} style={styles.locationText}>
+                {location}
+              </CustomText>
+            </View>
+          )}
 
           <View style={styles.statusRow}>
             <View style={styles.statusBadge}>
@@ -89,11 +197,13 @@ const BusinessDetail = () => {
               </CustomText>
             </View>
             <CustomText sm color={Colors.LightGray}>
-              {business.closesAt ?? "20:00'de kapaniyor"}
+              {STATIC_CLOSES_AT}
             </CustomText>
-            <CustomText sm color={Colors.BrandGold}>
-              Haritada Gor
-            </CustomText>
+            <CustomTouchableOpacity activeOpacity={0.7} onPress={() => location && handleOpenMaps(location)}>
+              <CustomText sm color={Colors.BrandGold}>
+                Haritada Gör
+              </CustomText>
+            </CustomTouchableOpacity>
           </View>
         </View>
 
@@ -102,7 +212,7 @@ const BusinessDetail = () => {
             <View style={styles.reviewScoreColumn}>
               <View style={styles.scoreRow}>
                 <CustomText extraBold xxlg color={Colors.BrandPrimary}>
-                  {business.rating}
+                  {STATIC_RATING}
                 </CustomText>
                 <CustomText sm color={Colors.LightGray}>
                   / 5.0
@@ -117,12 +227,12 @@ const BusinessDetail = () => {
               </View>
 
               <CustomText sm color={Colors.LightGray} style={styles.reviewCountText}>
-                {business.reviewCount} degerlendirme baz alindi
+                {STATIC_REVIEW_COUNT} değerlendirme baz alındı
               </CustomText>
             </View>
 
             <View style={styles.reviewBars}>
-              {(business.reviewDistribution ?? []).map((item) => (
+              {STATIC_REVIEW_DISTRIBUTION.map((item) => (
                 <View key={item.label} style={styles.reviewBarRow}>
                   <CustomText xs semibold color={Colors.BrandPrimary} style={styles.reviewLabel}>
                     {item.label}
@@ -139,63 +249,59 @@ const BusinessDetail = () => {
           </View>
         </View>
 
-        <View style={styles.sectionCard}>
-          <View style={styles.sectionHeader}>
-            <CustomText bold lg color={Colors.BrandPrimary}>
-              Meet the Team
-            </CustomText>
-            <CustomText semibold sm color={Colors.BrandGold}>
-              View all
-            </CustomText>
+        {teamMembers.length > 0 && (
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <CustomText bold lg color={Colors.BrandPrimary}>
+                Ekibimiz
+              </CustomText>
+            </View>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.teamList}>
+              {teamMembers.map((member) => (
+                <CustomerTeamMember key={member.id} member={member} />
+              ))}
+            </ScrollView>
           </View>
+        )}
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.teamList}>
-            {teamMembers.map((member) => (
-              <CustomerTeamMember key={member.id} member={member} />
-            ))}
-          </ScrollView>
-        </View>
+        {services.length > 0 && (
+          <View style={styles.sectionCard}>
+            <CustomText bold lg color={Colors.BrandPrimary} style={styles.servicesTitle}>
+              Hizmetler
+            </CustomText>
 
-        <View style={styles.sectionCard}>
-          <CustomText bold lg color={Colors.BrandPrimary} style={styles.servicesTitle}>
-            Services
-          </CustomText>
-
-          <CustomerBusinessCategoryTabs
-            categories={DETAIL_SERVICE_TABS}
-            selectedCategory={selectedServiceCategory}
-            onSelectCategory={setSelectedServiceCategory}
-          />
-
-          <View>
-            {serviceItems.map((service, index) => (
-              <CustomerServiceItem key={service.id} item={service} isLast={index === serviceItems.length - 1} />
-            ))}
+            <View>
+              {services.map((service, index) => (
+                <CustomerServiceItem key={service.id} item={service} isLast={index === services.length - 1} />
+              ))}
+            </View>
           </View>
-        </View>
+        )}
       </ScrollView>
 
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
-        <CustomButton
-          title="Book Appointment"
-          onPress={() =>
-            router.push({
-              pathname: "/customer/home/create-appointment",
-              params: {
-                id: business.id,
-                serviceCategory: selectedServiceCategory,
-                serviceId: selectedService.id,
-              },
-            })
-          }
-          marginTop={0}
-          height={56}
-          borderRadius={14}
-          backgroundColor="#C6A87C"
-          titleStyle={styles.bottomButtonTitle}
-          rightIcon={<Ionicons name="calendar-outline" size={20} color={Colors.White} style={styles.bottomButtonIcon} />}
-        />
-      </View>
+      {firstService && (
+        <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
+          <CustomButton
+            title="Randevu Al"
+            onPress={() =>
+              router.push({
+                pathname: "/customer/home/create-appointment",
+                params: {
+                  id: businessId,
+                  serviceId: firstService.id,
+                },
+              })
+            }
+            marginTop={0}
+            height={56}
+            borderRadius={14}
+            backgroundColor="#C6A87C"
+            titleStyle={styles.bottomButtonTitle}
+            rightIcon={<Ionicons name="calendar-outline" size={20} color={Colors.White} style={styles.bottomButtonIcon} />}
+          />
+        </View>
+      )}
     </LayoutView>
   );
 };
@@ -205,6 +311,11 @@ export default BusinessDetail;
 const styles = StyleSheet.create({
   contentWrapper: {
     paddingHorizontal: 0,
+  },
+  loader: {
+    flex: 1,
+    alignSelf: "center",
+    marginTop: 80,
   },
   scrollView: {
     flex: 1,
@@ -229,6 +340,9 @@ const styles = StyleSheet.create({
   galleryImage: {
     width: "100%",
     height: "100%",
+  },
+  galleryPlaceholder: {
+    backgroundColor: "#E5E7EB",
   },
   dotsRow: {
     flexDirection: "row",
