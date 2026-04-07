@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { View, StyleSheet, ScrollView, Pressable, Modal, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import LayoutView from "@/components/high-level/layout-view";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import CustomText from "@/components/high-level/custom-text";
@@ -21,8 +22,6 @@ const PALETTE = {
   onErrorContainer: "#93000A",
 };
 
-const OWNER_AVATAR =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuB5GuPy82MQdyKpsPUAnzaBKkheXh0eKC69UTVDVDw48jLHmwmTjfmtm7e5gHREc8FahVlm4kb0VpIehpQ1qeSrJ8LUZhSdwrh_zZbDylHVKrfd4lsx-r4BXw8hvpgw8lrqEki-RlRg-XtVe4FtPJluTbI4q7PY6L4zm2pSipmJDr2FSZb2CzRF-Bysm9rzQ_81YP00mLIibzodVOThKh01xUaLqw2R97TuAgssUHFtZI4ARmOoyHX1YumdAgg2zaTcdJXfTUbNlDQ";
 
 const INITIAL_REQUESTS = [
   {
@@ -125,22 +124,7 @@ export default function Requests() {
   };
 
   return (
-    <View style={styles.root}>
-      <View style={[styles.topBar, { paddingTop: insets.top + 10 }]}>
-        <View style={styles.topBarLeft}>
-          <Pressable style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}>
-            <Ionicons name="menu" size={24} color={Colors.BrandPrimary} />
-          </Pressable>
-          <CustomText extraBold fontSize={24} color={Colors.BrandPrimary} style={styles.brandText}>
-            BuRandevu
-          </CustomText>
-        </View>
-
-        <Pressable style={({ pressed }) => [styles.avatarButton, pressed && styles.pressed]} onPress={() => router.push("/business/profil")}>
-          <CustomImage uri={OWNER_AVATAR} style={styles.avatarImage} contentFit="cover" />
-        </Pressable>
-      </View>
-
+    <LayoutView isActiveHeader={true} title="Talepler" backgroundColor={PALETTE.bg} paddingHorizontal={0}>
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingTop: 24, paddingBottom: insets.bottom + 112 }]} showsVerticalScrollIndicator={false}>
         {pendingCount === 0 ? (
           <View style={styles.emptyState}>
@@ -327,15 +311,11 @@ export default function Requests() {
           </View>
         </View>
       </Modal>
-    </View>
+    </LayoutView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: PALETTE.bg,
-  },
   topBar: {
     paddingHorizontal: 20,
     paddingBottom: 14,

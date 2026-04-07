@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet, ScrollView, Pressable, Modal, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import LayoutView from "@/components/high-level/layout-view";
 import { Ionicons } from "@expo/vector-icons";
 import CustomText from "@/components/high-level/custom-text";
 import CustomImage from "@/components/high-level/custom-image";
@@ -23,9 +23,6 @@ const PALETTE = {
   gold: Colors.Gold,
   goldSoft: "rgba(212,175,55,0.14)",
 };
-
-const OWNER_AVATAR =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuDEGkBeRlkf0bFGNdv483wwa4oqEvgXXEiPvCzJ2EhjwcSr1LZuiRRE9QDbxAzkmUjpT4PeTOBCihWxiT3lV2-tjaPOHVCWmrp-xCOspZxn6BK2cQAO1E1EYDyldak4lshZOJERQo9SGRdBWYzOG4OMbk8z-DXNoDf2CXfRJAGSo78zLZSOAlKtRm4Rk44WgVFLYWj7T-uOnx6RfjPd9HrhRoIXXbxhP5oAwaSpdvo-Vpg66LeJP6yNCBxECBaiT7GvjBiknqi5jKw";
 
 const DATE_FILTER_OPTIONS = ["Bugün", "Yarın", "Bu hafta"];
 const EMPLOYEE_OPTIONS = ["Tümü", "Murat Atasoy", "Ayşe Kaya", "Elif Şahin"];
@@ -186,26 +183,9 @@ export default function Appointments() {
   }, [periodTab, filteredAppointments.length, dateFilter]);
 
   return (
-    <View style={styles.root}>
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <View style={styles.headerLeft}>
-          <Pressable style={({ pressed }) => [styles.headerIconBtn, pressed && styles.pressed]}>
-            <Ionicons name="menu" size={24} color={Colors.BrandPrimary} />
-          </Pressable>
-          <CustomText bold fontSize={20} color={Colors.BrandPrimary} style={styles.headerTitle}>
-            BuRandevu
-          </CustomText>
-        </View>
-        <Pressable style={({ pressed }) => [styles.headerAvatarBtn, pressed && styles.pressed]} onPress={() => router.push("/business/profil")}>
-          <CustomImage uri={OWNER_AVATAR} style={styles.headerAvatar} contentFit="cover" />
-        </Pressable>
-      </View>
-
+    <LayoutView isActiveHeader={true} title="Randevular" backgroundColor={PALETTE.bg} paddingHorizontal={0}>
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]} showsVerticalScrollIndicator={false}>
         <View style={styles.sectionIntro}>
-          <CustomText light fontSize={34} color={Colors.BrandPrimary} style={styles.pageTitle}>
-            Randevular
-          </CustomText>
           <CustomText sm color={PALETTE.muted} style={styles.pageSubtitle}>
             {subtitleText}
           </CustomText>
@@ -471,15 +451,11 @@ export default function Appointments() {
           </View>
         </View>
       </Modal>
-    </View>
+    </LayoutView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: PALETTE.bg,
-  },
   header: {
     flexDirection: "row",
     alignItems: "center",

@@ -2,8 +2,7 @@ import { router } from "expo-router";
 
 const generateRandomString = (length = 15) => {
   let result = "";
-  let characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let charactersLength = characters.length;
   for (let i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * charactersLength));
@@ -11,14 +10,11 @@ const generateRandomString = (length = 15) => {
   return result;
 };
 
-const isNullOrEmpty = (value) =>
-  value === undefined || value === "" || value === null || Number.isNaN(value);
+const isNullOrEmpty = (value) => value === undefined || value === "" || value === null || Number.isNaN(value);
 
-const getFileExtension = (fileName) =>
-  fileName?.substr(fileName?.lastIndexOf(".") + 1)?.toLowerCase();
+const getFileExtension = (fileName) => fileName?.substr(fileName?.lastIndexOf(".") + 1)?.toLowerCase();
 
-const isImageExtension = (extension) =>
-  ["jpg", "jpeg", "png"].includes(extension?.toLowerCase());
+const isImageExtension = (extension) => ["jpg", "jpeg", "png"].includes(extension?.toLowerCase());
 
 const isJSON = (str) => {
   try {
@@ -72,7 +68,7 @@ const getInitials = (nameSurname) => {
   } else if (nameParts.length >= 2) {
     // Birden fazla kelime ise ilk iki kelimenin ilk harfleri
     const firstInitial = nameParts[0][0]?.toUpperCase() || "";
-    const secondInitial = nameParts[1][0]?.toLowerCase() || "";
+    const secondInitial = nameParts[1][0]?.toUpperCase() || "";
     return firstInitial + secondInitial;
   }
 

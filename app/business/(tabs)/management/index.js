@@ -1,13 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { ImageBackground, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import LayoutView from "@/components/high-level/layout-view";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/firebase";
 import useAuthStore from "@/store/auth-store";
-import general from "@/utils/general";
 import CustomText from "@/components/high-level/custom-text";
 import { Colors } from "@/constants/colors";
 import CommandBus from "@/infrastructures/command-bus/command-bus";
@@ -51,24 +49,6 @@ function DashboardActionCard({ item, featured, onPress }) {
 export default function Management() {
   const insets = useSafeAreaInsets();
   const isAdmin = useAuthStore((s) => s.isAdmin);
-  const [userInfo, setUserInfo] = useState(null);
-
-  useEffect(() => {
-    const uid = auth.currentUser?.uid;
-    if (!uid) return;
-
-    getDoc(doc(db, "businesses", uid))
-      .then((snap) => {
-        if (snap.exists()) {
-          setUserInfo(snap.data());
-        }
-      })
-      .catch(() => null);
-  }, []);
-
-  const businessName = userInfo?.businessName;
-  const ownerName = userInfo?.name ?? "İşletme sahibi";
-  const roleLabel = isAdmin ? "MASTER DASHBOARD" : "OPERASYON PANELİ";
 
   const dashboardCards = useMemo(
     () => [
@@ -126,39 +106,16 @@ export default function Management() {
   };
 
   return (
-    <View style={styles.root}>
+    <LayoutView isActiveHeader={true} title="Yönetim" backgroundColor={Colors.BrandBackground} paddingHorizontal={0}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={{
-          paddingTop: insets.top + 14,
+          paddingTop: 14,
           paddingBottom: insets.bottom + 122,
           paddingHorizontal: 18,
         }}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <View style={styles.headerBrandRow}>
-            <View style={styles.menuButton}>
-              <Ionicons name="menu" size={22} color={Colors.BrandPrimary} />
-            </View>
-
-            <View style={styles.headerTitleWrap}>
-              <CustomText extraBold fontSize={20} color={Colors.BrandPrimary} style={styles.brandName}>
-                BURANDEVU
-              </CustomText>
-              <CustomText semibold fontSize={11} color={Colors.LightGray2}>
-                {businessName}
-              </CustomText>
-            </View>
-          </View>
-
-          <Pressable style={({ pressed }) => [styles.avatarButton, pressed && styles.pressed]} onPress={() => router.push("/business/profil")}>
-            <CustomText bold fontSize={12} color={Colors.BrandPrimary}>
-              {general.getInitials(ownerName?.trim() || businessName) || "BR"}
-            </CustomText>
-          </Pressable>
-        </View>
-
         <View style={styles.gridWrap}>
           <DashboardActionCard item={dashboardCards[0]} featured onPress={() => handleCardPress(dashboardCards[0])} />
 
@@ -169,15 +126,11 @@ export default function Management() {
           </View>
         </View>
       </ScrollView>
-    </View>
+    </LayoutView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: Colors.BrandBackground,
-  },
   scrollView: {
     flex: 1,
   },

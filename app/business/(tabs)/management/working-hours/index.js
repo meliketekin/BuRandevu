@@ -484,7 +484,7 @@ export default function WorkingHours() {
     setIsSaving(true);
     try {
       await updateDoc(doc(db, "businesses", uid), {
-        workingHours: hours,
+        workingHours: hours.map(({ key, enabled, start, end }) => ({ key, enabled, start, end })),
         specialWorkingHours: specialDays.map((item) => ({
           date: item.date,
           label: item.label,

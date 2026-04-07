@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { View, StyleSheet, ScrollView, Pressable, Image, Switch } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import LayoutView from "@/components/high-level/layout-view";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { signOut } from "firebase/auth";
@@ -10,9 +11,7 @@ import useAuthStore from "@/store/auth-store";
 import CustomText from "@/components/high-level/custom-text";
 import { Colors } from "@/constants/colors";
 import CommandBus from "@/infrastructures/command-bus/command-bus";
-
-const PROFILE_PLACEHOLDER =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuA4YALJ65s4NHFoyseqMS7SzUcRuTMcvlXrg5Kfjr_z5EdIF0RlyqOZaWBV1EGf8xKJieylNAY2aZ7Bfb2Lc-SCN6zwW8NyiGXs9MM4UeUY0pBVIWD_IDLgVPqdvp6kYvsG5TYvnnRqkTPInxvETk7Sr_BQmVHWPN7Bc-_aLQT64likMs4aIlFg8p3qOobzAmV_Sg4SEj8DM5WELNGKXRNXaic1W6ZUp4_gxc3WyUQptZyDr0M2xBBWl_0KJOZloZYZNVf3haCkaWA";
+import general from "@/utils/general";
 
 export default function Profile() {
   const insets = useSafeAreaInsets();
@@ -47,8 +46,10 @@ export default function Profile() {
   const email = userInfo?.email ?? auth.currentUser?.email ?? "";
   const category = businessInfo?.category ?? "";
   const phone = businessInfo?.phone ?? "";
-  const avatarUri = userInfo?.photoURL ?? auth.currentUser?.photoURL ?? PROFILE_PLACEHOLDER;
-  const headerHeight = insets.top + 68;
+  const rawPhoto = userInfo?.photoURL ?? auth.currentUser?.photoURL;
+  const hasAvatar = typeof rawPhoto === "string" && rawPhoto.trim().length > 0;
+  const avatarUri = hasAvatar ? rawPhoto.trim() : null;
+  const avatarInitials = general.getInitials(ownerName?.trim() || businessName) || "IS";
 
   const accountSubtitle = useMemo(() => {
     if (phone) return phone;
@@ -68,37 +69,27 @@ export default function Profile() {
     CommandBus.sc.alertInfo("Yakında", "Premium üyelik seçenekleri çok yakında burada olacak.", 2200);
   };
 
-  const handleHeaderNotificationPress = () => {
-    CommandBus.sc.alertInfo("Bildirimler", "Bildirim merkezi çok yakında eklenecek.", 2200);
-  };
-
   return (
-    <View style={styles.root}>
-      <View style={[styles.header, { paddingTop: insets.top + 8, height: headerHeight }]}>
-        <View style={styles.headerInner}>
-          <View style={styles.headerBrand}>
-            <Image source={{ uri: avatarUri }} style={styles.headerAvatar} resizeMode="cover" />
-            <CustomText bold fontSize={18} color={Colors.BrandPrimary} style={styles.headerTitle}>
-              {businessName.toUpperCase()}
-            </CustomText>
-          </View>
-          <Pressable style={({ pressed }) => [styles.headerActionButton, pressed && styles.pressedState]} onPress={handleHeaderNotificationPress}>
-            <Ionicons name="notifications-outline" size={22} color={Colors.BrandPrimary} />
-          </Pressable>
-        </View>
-      </View>
-
+    <LayoutView isActiveHeader={true} title="Profil" backgroundColor={Colors.BrandBackground} paddingHorizontal={0}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
           styles.container,
-          { paddingTop: headerHeight + 28, paddingBottom: insets.bottom + 120 },
+          { paddingTop: 28, paddingBottom: insets.bottom + 120 },
         ]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.heroSection}>
           <View style={styles.heroAvatarWrap}>
-            <Image source={{ uri: avatarUri }} style={styles.heroAvatar} resizeMode="cover" />
+            {hasAvatar ? (
+              <Image source={{ uri: avatarUri }} style={styles.heroAvatar} resizeMode="cover" />
+            ) : (
+              <View style={[styles.heroAvatar, styles.heroAvatarInitials]}>
+                <CustomText bold fontSize={36} color={Colors.BrandPrimary}>
+                  {avatarInitials}
+                </CustomText>
+              </View>
+            )}
           </View>
           <CustomText bold fontSize={24} color={Colors.BrandPrimary} style={styles.businessName}>
             {businessName}
@@ -217,15 +208,11 @@ export default function Profile() {
           </View>
         </Pressable>
       </ScrollView>
-    </View>
+    </LayoutView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: Colors.BrandBackground,
-  },
   header: {
     position: "absolute",
     top: 0,
@@ -299,6 +286,13 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     borderRadius: 48,
+  },
+  heroAvatarInitials: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(212,175,55,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(212,175,55,0.2)",
   },
   businessName: {
     marginBottom: 6,
