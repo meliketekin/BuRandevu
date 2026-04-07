@@ -11,6 +11,8 @@ export default function ConfirmModal({
   cancelText = "İptal",
   /** true → onay butonu kırmızı (silme vb.) */
   destructiveConfirm = false,
+  /** { text, onPress, destructive? } → üçüncü buton (opsiyonel) */
+  secondaryAction = null,
 }) {
   const handleCancel = () => {
     onCancel?.();
@@ -24,6 +26,39 @@ export default function ConfirmModal({
       onClose?.();
     }
   };
+
+  const handleSecondary = () => {
+    secondaryAction?.onPress?.();
+    onClose?.();
+  };
+
+  if (secondaryAction) {
+    return (
+      <View style={styles.overlay}>
+        <View style={styles.box}>
+          {title ? <Text style={styles.title}>{title}</Text> : null}
+          {message ? <Text style={styles.message}>{message}</Text> : null}
+          <View style={styles.actionsColumn}>
+            <Pressable
+              style={[styles.button, styles.fullButton, destructiveConfirm ? styles.confirmButtonDanger : styles.confirmButton]}
+              onPress={handleConfirm}
+            >
+              <Text style={styles.confirmText}>{confirmText}</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.button, styles.fullButton, secondaryAction.destructive ? styles.confirmButtonDanger : styles.secondaryButton]}
+              onPress={handleSecondary}
+            >
+              <Text style={secondaryAction.destructive ? styles.confirmText : styles.secondaryText}>{secondaryAction.text}</Text>
+            </Pressable>
+            <Pressable style={[styles.button, styles.fullButton, styles.cancelButton]} onPress={handleCancel}>
+              <Text style={styles.cancelText}>{cancelText}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.overlay}>
@@ -81,6 +116,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
     justifyContent: "flex-end",
+  },
+  actionsColumn: {
+    flexDirection: "column",
+    gap: 8,
+  },
+  fullButton: {
+    alignItems: "center",
+  },
+  secondaryButton: {
+    backgroundColor: "#f0f0f0",
+  },
+  secondaryText: {
+    color: "#333",
+    fontSize: 15,
   },
   button: {
     paddingVertical: 10,

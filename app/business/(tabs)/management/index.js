@@ -19,7 +19,7 @@ const CARD_IMAGES = {
     "https://lh3.googleusercontent.com/aida-public/AB6AXuB0mGOSUYejPX38URIgXFI-WX58NFwVXEFffTj_a8NopToOFwi6nSTfJct6oCdbLjRqSoDAaDlGZqTvKo9PzR4kpRV9j5yCU91g1g7PaFmo_kBXNMbaZjT0TvoByXsxFy5lbUbpvR_B4Senkd6r_jwTBlIYFv_Dwnp2fIemq3rAzUywEZ8FUh1QMaOP1rt3u2A-jvjUQudYwNAuxLVP2heIXyYHW1ru_seGkty2K517ZmOonEMlDwX_XJTIVrp6EYCuQsEedferYeY",
   business:
     "https://lh3.googleusercontent.com/aida-public/AB6AXuBq1RJ7jSGWmb8frLV39Fw_tUZPgxNtL3JBsjQTjnz8a4XfBWa1i8boWNHXagpPZDkxtfZzqkAsf4Bv_DFm7criBFEtYs-6Kkk9J6P4dSBEqzFsbVOl0u2woYKPYt5Iax-zb6K5abSiWSp7HGXQvh1P082IQg-Q3ILWTqfcNeyddIUeNc6ccvJhxwguPwN7bfmbFaHiru1XISaGjNFmphdFsvrGj_8xxzS5mHElhCG87bGoPOUFeo7EMaay-F4NmUTW6U73lpL7Ah0",
-  hours: "https://st2.depositphotos.com/8468478/12253/i/600/depositphotos_122530756-stock-photo-black-clock-isolated-on-white.jpg",
+  workingHours: "https://st2.depositphotos.com/8468478/12253/i/600/depositphotos_122530756-stock-photo-black-clock-isolated-on-white.jpg",
   accounting:
     "https://lh3.googleusercontent.com/aida-public/AB6AXuA8Qmk6_BeJlpR4yJZoROnyu8LS7JlGh2W-xVT7mepI0cuJjAus5Pqt4RKvj1XcmRJqexmAvSGKVI7wOyJCSTr8NnpEZlCrcqTaKuq1wP8pQcfmkG-c4q7OqwqrObVWSxLrUCfedtHs2O_EHlZfFZ4_4k-WdTbkB2K1OQPNrNfk-PiIZZXJuCXOg-YgwKmxQH5SpXrP2dVN1ZJuM2Ws1UoCC6nAoBi-TR_RxFdEjalw68RM0yqIoXzrXg43S0oxRjlekG0Ig7AGlUw",
 };
@@ -97,12 +97,12 @@ export default function Management() {
         route: "/business/management/business-info",
       },
       {
-        key: "hours",
+        key: "workingHours",
         title: "Çalışma saatleri",
         caption: "Çalışma saatlerini gör ve düzenle",
         icon: "time-outline",
-        image: CARD_IMAGES.hours,
-        route: "/business/management/hours",
+        image: CARD_IMAGES.workingHours,
+        route: "/business/management/working-hours",
       },
       {
         key: "accounting",

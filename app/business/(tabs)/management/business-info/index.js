@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
+import { openModal, ModalTypeEnum } from "@/components/high-level/modal-renderer";
 import MapView, { Marker } from "react-native-maps";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -100,51 +101,50 @@ export default function EditBusinessInfoForm() {
     return { url: data.secure_url, publicId: data.public_id };
   }, []);
 
-  const confirmPhotoRemoval = useCallback((photoType, id) => {
-    Alert.alert(
-      "Foto silinsin mi?",
-      `${photoType} galerinizden kaldırılacak. Bu işlemden emin misiniz?`,
-      [
-        { text: "Vazgeç", style: "cancel" },
-        {
-          text: "Sil",
-          style: "destructive",
-          onPress: () => {
-            if (photoType === "Mekan fotoğrafı") {
-              const removed = form.venuePhotos.find((p) => p.id === id);
-              if (removed?.publicId) setPendingDeleteIds((prev) => [...prev, removed.publicId]);
-              setField(
-                "venuePhotos",
-                form.venuePhotos.filter((p) => p.id !== id),
-              );
-              return;
-            }
-
-            const removed = form.servicePhotos.find((p) => p.id === id);
+  const confirmPhotoRemoval = useCallback(
+    (photoType, id) => {
+      openModal(ModalTypeEnum.ConfirmModal, {
+        title: "Foto silinsin mi?",
+        message: `${photoType} galerinizden kaldırılacak. Bu işlemden emin misiniz?`,
+        confirmText: "Sil",
+        cancelText: "Vazgeç",
+        destructiveConfirm: true,
+        onConfirm: () => {
+          if (photoType === "Mekan fotoğrafı") {
+            const removed = form.venuePhotos.find((p) => p.id === id);
             if (removed?.publicId) setPendingDeleteIds((prev) => [...prev, removed.publicId]);
             setField(
-              "servicePhotos",
-              form.servicePhotos.filter((p) => p.id !== id),
+              "venuePhotos",
+              form.venuePhotos.filter((p) => p.id !== id),
             );
-          },
-        },
-      ],
-    );
-  }, [form.servicePhotos, form.venuePhotos]);
+            return;
+          }
 
-  const hasUnsavedChanges = useMemo(
-    () => createFormSnapshot(form, pendingDeleteIds) !== initialSnapshotRef.current,
-    [form, pendingDeleteIds],
+          const removed = form.servicePhotos.find((p) => p.id === id);
+          if (removed?.publicId) setPendingDeleteIds((prev) => [...prev, removed.publicId]);
+          setField(
+            "servicePhotos",
+            form.servicePhotos.filter((p) => p.id !== id),
+          );
+        },
+      });
+    },
+    [form.servicePhotos, form.venuePhotos],
   );
 
-  const continueNavigation = useCallback((action) => {
-    allowRemoveRef.current = true;
-    if (action) {
-      navigation.dispatch(action);
-      return;
-    }
-    router.back();
-  }, [navigation]);
+  const hasUnsavedChanges = useMemo(() => createFormSnapshot(form, pendingDeleteIds) !== initialSnapshotRef.current, [form, pendingDeleteIds]);
+
+  const continueNavigation = useCallback(
+    (action) => {
+      allowRemoveRef.current = true;
+      if (action) {
+        navigation.dispatch(action);
+        return;
+      }
+      router.back();
+    },
+    [navigation],
+  );
 
   const handleSave = useCallback(async () => {
     const uid = auth.currentUser?.uid;
@@ -220,31 +220,26 @@ export default function EditBusinessInfoForm() {
     }
   }, [form, pendingDeleteIds, uploadPhoto]);
 
-  const handleAttemptLeave = useCallback((action) => {
-    if (isSaving) return;
+  const handleAttemptLeave = useCallback(
+    (action) => {
+      if (isSaving) return;
 
-    if (!hasUnsavedChanges) {
-      continueNavigation(action);
-      return;
-    }
+      if (!hasUnsavedChanges) {
+        continueNavigation(action);
+        return;
+      }
 
-    Alert.alert(
-      "Kaydedilmemiş değişiklikler var",
-      "Yaptığınız değişiklikler kaydedilmedi. Çıkmadan önce kaydetmek ister misiniz?",
-      [
-        { text: "Vazgeç", style: "cancel" },
-        {
-          text: "Kaydetmeden çık",
-          style: "destructive",
-          onPress: () => continueNavigation(action),
-        },
-        {
-          text: "Kaydet",
-          onPress: () => handleSave(),
-        },
-      ],
-    );
-  }, [continueNavigation, handleSave, hasUnsavedChanges, isSaving]);
+      openModal(ModalTypeEnum.ConfirmModal, {
+        title: "Kaydedilmemiş değişiklikler var",
+        message: "Yaptığınız değişiklikler kaydedilmedi. Çıkmadan önce kaydetmek ister misiniz?",
+        confirmText: "Kaydet",
+        cancelText: "Vazgeç",
+        onConfirm: () => handleSave(),
+        secondaryAction: { text: "Kaydetmeden çık", destructive: true, onPress: () => continueNavigation(action) },
+      });
+    },
+    [continueNavigation, handleSave, hasUnsavedChanges, isSaving],
+  );
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("beforeRemove", (event) => {

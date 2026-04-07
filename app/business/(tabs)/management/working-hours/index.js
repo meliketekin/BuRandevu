@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Keyboard, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, TextInput, TouchableWithoutFeedback, View } from "react-native";
+import { Keyboard, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, TextInput, TouchableWithoutFeedback, View } from "react-native";
+import { openModal, ModalTypeEnum } from "@/components/high-level/modal-renderer";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
@@ -248,7 +249,7 @@ function SpecialDayRow({ item, isLast, onToggle, onTimeChange, onRemove }) {
   );
 }
 
-export default function BusinessHours() {
+export default function WorkingHours() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const [hours, setHours] = useState(DEFAULT_HOURS);
@@ -356,21 +357,20 @@ export default function BusinessHours() {
     setSpecialDays((prev) => prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
   }, []);
 
-  const confirmRemoveSpecialDay = useCallback((id) => {
-    const target = specialDays.find((item) => item.id === id);
-    Alert.alert(
-      "Özel gün silinsin mi?",
-      `"${target?.name?.trim() ? `${target.name.trim()} - ${target.label}` : target?.label ?? "Bu özel gün"}" kaydı kaldırılacak. Emin misiniz?`,
-      [
-        { text: "Vazgeç", style: "cancel" },
-        {
-          text: "Sil",
-          style: "destructive",
-          onPress: () => setSpecialDays((prev) => prev.filter((item) => item.id !== id)),
-        },
-      ],
-    );
-  }, [specialDays]);
+  const confirmRemoveSpecialDay = useCallback(
+    (id) => {
+      const target = specialDays.find((item) => item.id === id);
+      openModal(ModalTypeEnum.ConfirmModal, {
+        title: "Özel gün silinsin mi?",
+        message: `"${target?.name?.trim() ? `${target.name.trim()} - ${target.label}` : (target?.label ?? "Bu özel gün")}" kaydı kaldırılacak. Emin misiniz?`,
+        confirmText: "Sil",
+        cancelText: "Vazgeç",
+        destructiveConfirm: true,
+        onConfirm: () => setSpecialDays((prev) => prev.filter((item) => item.id !== id)),
+      });
+    },
+    [specialDays],
+  );
 
   const markedDates = useMemo(() => {
     const marks = {};
@@ -441,31 +441,27 @@ export default function BusinessHours() {
     }
   }, [hours, pendingSelectedDates, pendingSpecialDayName, specialDays]);
 
-  const hasUnsavedChanges = useMemo(
-    () => createHoursSnapshot(hours, specialDays) !== initialSnapshotRef.current,
-    [hours, specialDays],
+  const hasUnsavedChanges = useMemo(() => createHoursSnapshot(hours, specialDays) !== initialSnapshotRef.current, [hours, specialDays]);
+
+  const continueNavigation = useCallback(
+    (action) => {
+      allowRemoveRef.current = true;
+      if (action) {
+        navigation.dispatch(action);
+        return;
+      }
+      router.back();
+    },
+    [navigation],
   );
 
-  const continueNavigation = useCallback((action) => {
-    allowRemoveRef.current = true;
-    if (action) {
-      navigation.dispatch(action);
-      return;
-    }
-    router.back();
-  }, [navigation]);
-
   const findInvalidRange = useCallback(() => {
-    const regularInvalid = hours.find(
-      (item) => item.enabled && validateTimeSelection({ start: item.start, end: item.end, field: "end", nextValue: item.end }),
-    );
+    const regularInvalid = hours.find((item) => item.enabled && validateTimeSelection({ start: item.start, end: item.end, field: "end", nextValue: item.end }));
     if (regularInvalid) {
       return `"${regularInvalid.day}" icin saat araligi gecersiz.`;
     }
 
-    const specialInvalid = specialDays.find(
-      (item) => item.enabled && validateTimeSelection({ start: item.start, end: item.end, field: "end", nextValue: item.end }),
-    );
+    const specialInvalid = specialDays.find((item) => item.enabled && validateTimeSelection({ start: item.start, end: item.end, field: "end", nextValue: item.end }));
     if (specialInvalid) {
       return `"${specialInvalid.name?.trim() ? `${specialInvalid.name.trim()} - ${specialInvalid.label}` : specialInvalid.label}" icin saat araligi gecersiz.`;
     }
@@ -511,31 +507,26 @@ export default function BusinessHours() {
     }
   }, [findInvalidRange, hours, specialDays]);
 
-  const handleAttemptLeave = useCallback((action) => {
-    if (isSaving) return;
+  const handleAttemptLeave = useCallback(
+    (action) => {
+      if (isSaving) return;
 
-    if (!hasUnsavedChanges) {
-      continueNavigation(action);
-      return;
-    }
+      if (!hasUnsavedChanges) {
+        continueNavigation(action);
+        return;
+      }
 
-    Alert.alert(
-      "Kaydedilmemiş değişiklikler var",
-      "Yaptığınız değişiklikler kaydedilmedi. Çıkmadan önce kaydetmek ister misiniz?",
-      [
-        { text: "Vazgeç", style: "cancel" },
-        {
-          text: "Kaydetmeden çık",
-          style: "destructive",
-          onPress: () => continueNavigation(action),
-        },
-        {
-          text: "Kaydet",
-          onPress: () => handleSave(),
-        },
-      ],
-    );
-  }, [continueNavigation, handleSave, hasUnsavedChanges, isSaving]);
+      openModal(ModalTypeEnum.ConfirmModal, {
+        title: "Kaydedilmemiş değişiklikler var",
+        message: "Yaptığınız değişiklikler kaydedilmedi. Çıkmadan önce kaydetmek ister misiniz?",
+        confirmText: "Kaydet",
+        cancelText: "Vazgeç",
+        onConfirm: () => handleSave(),
+        secondaryAction: { text: "Kaydetmeden çık", destructive: true, onPress: () => continueNavigation(action) },
+      });
+    },
+    [continueNavigation, handleSave, hasUnsavedChanges, isSaving],
+  );
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("beforeRemove", (event) => {
@@ -560,11 +551,7 @@ export default function BusinessHours() {
         <View style={styles.headerRightSpacer} />
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={{ paddingTop: 14, paddingBottom: 120, paddingHorizontal: 16 }}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={styles.scroll} contentContainerStyle={{ paddingTop: 14, paddingBottom: 120, paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
           <View style={styles.noteCard}>
             <Ionicons name="information-circle-outline" size={18} color={Colors.Gold} />
@@ -584,13 +571,7 @@ export default function BusinessHours() {
 
           <View style={styles.cardSection}>
             {hours.map((item, index) => (
-              <HourRow
-                key={item.key}
-                item={item}
-                isLast={index === hours.length - 1}
-                onToggle={() => toggleDay(item.key)}
-                onTimeChange={changeTime}
-              />
+              <HourRow key={item.key} item={item} isLast={index === hours.length - 1} onToggle={() => toggleDay(item.key)} onTimeChange={changeTime} />
             ))}
           </View>
 
@@ -642,75 +623,80 @@ export default function BusinessHours() {
         <View style={styles.modalSheetWrap}>
           <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <View style={styles.modalSheet}>
-            <View style={styles.modalHandle} />
-            <View style={styles.modalHeader}>
-              <View>
-                <CustomText extraBold fontSize={18} color={Colors.BrandPrimary}>
-                  Özel gün seç
-                </CustomText>
+              <View style={styles.modalHandle} />
+              <View style={styles.modalHeader}>
+                <View>
+                  <CustomText extraBold fontSize={18} color={Colors.BrandPrimary}>
+                    Özel gün seç
+                  </CustomText>
+                  <CustomText medium fontSize={12} color={Colors.LightGray2}>
+                    Bir veya birden fazla tarih seçip özel saat ekleyebilirsin.
+                  </CustomText>
+                </View>
+                <Pressable onPress={() => setCalendarVisible(false)} hitSlop={12}>
+                  <Ionicons name="close" size={22} color={Colors.LightGray2} />
+                </Pressable>
+              </View>
+
+              <View style={styles.modalInputWrap}>
+                <TextInput
+                  value={pendingSpecialDayName}
+                  onChangeText={setPendingSpecialDayName}
+                  placeholder="Örn. Bayram mesaisi"
+                  placeholderTextColor={Colors.InputPlaceholderColor}
+                  style={styles.modalTextInput}
+                />
+              </View>
+
+              <RNCalendar
+                firstDay={1}
+                minDate={todayDateId}
+                markingType="simple"
+                markedDates={markedDates}
+                onDayPress={handleDayPress}
+                enableSwipeMonths
+                theme={{
+                  calendarBackground: "transparent",
+                  textSectionTitleColor: Colors.LightGray2,
+                  dayTextColor: Colors.BrandPrimary,
+                  monthTextColor: Colors.BrandPrimary,
+                  arrowColor: Colors.BrandPrimary,
+                  todayTextColor: Colors.Gold,
+                  textDayFontSize: 14,
+                  textMonthFontSize: 16,
+                  textDayHeaderFontSize: 11,
+                  textDayFontWeight: "600",
+                  textMonthFontWeight: "700",
+                  textDayHeaderFontWeight: "600",
+                }}
+                style={styles.calendar}
+              />
+
+              <View style={styles.selectedDatesInfo}>
                 <CustomText medium fontSize={12} color={Colors.LightGray2}>
-                  Bir veya birden fazla tarih seçip özel saat ekleyebilirsin.
+                  {Object.keys(pendingSelectedDates).length > 0 ? `${Object.keys(pendingSelectedDates).length} tarih secildi` : "Eklemek istedigin tarihlere dokun."}
                 </CustomText>
               </View>
-              <Pressable onPress={() => setCalendarVisible(false)} hitSlop={12}>
-                <Ionicons name="close" size={22} color={Colors.LightGray2} />
-              </Pressable>
-            </View>
 
-            <View style={styles.modalInputWrap}>
-              <TextInput
-                value={pendingSpecialDayName}
-                onChangeText={setPendingSpecialDayName}
-                placeholder="Örn. Bayram mesaisi"
-                placeholderTextColor={Colors.InputPlaceholderColor}
-                style={styles.modalTextInput}
-              />
-            </View>
-
-            <RNCalendar
-              firstDay={1}
-              minDate={todayDateId}
-              markingType="simple"
-              markedDates={markedDates}
-              onDayPress={handleDayPress}
-              enableSwipeMonths
-              theme={{
-                calendarBackground: "transparent",
-                textSectionTitleColor: Colors.LightGray2,
-                dayTextColor: Colors.BrandPrimary,
-                monthTextColor: Colors.BrandPrimary,
-                arrowColor: Colors.BrandPrimary,
-                todayTextColor: Colors.Gold,
-                textDayFontSize: 14,
-                textMonthFontSize: 16,
-                textDayHeaderFontSize: 11,
-                textDayFontWeight: "600",
-                textMonthFontWeight: "700",
-                textDayHeaderFontWeight: "600",
-              }}
-              style={styles.calendar}
-            />
-
-            <View style={styles.selectedDatesInfo}>
-              <CustomText medium fontSize={12} color={Colors.LightGray2}>
-                {Object.keys(pendingSelectedDates).length > 0
-                  ? `${Object.keys(pendingSelectedDates).length} tarih secildi`
-                  : "Eklemek istedigin tarihlere dokun."}
-              </CustomText>
-            </View>
-
-            <View style={styles.modalFooter}>
-              <Pressable style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]} onPress={() => { setPendingSpecialDayName(""); setPendingSelectedDates({}); setCalendarVisible(false); }}>
-                <CustomText bold fontSize={14} color={Colors.LightGray2}>
-                  İptal
-                </CustomText>
-              </Pressable>
-              <Pressable style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]} onPress={handleAddSpecialDays}>
-                <CustomText bold fontSize={14} color={Colors.BrandPrimary}>
-                  Seçilenleri ekle
-                </CustomText>
-              </Pressable>
-            </View>
+              <View style={styles.modalFooter}>
+                <Pressable
+                  style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
+                  onPress={() => {
+                    setPendingSpecialDayName("");
+                    setPendingSelectedDates({});
+                    setCalendarVisible(false);
+                  }}
+                >
+                  <CustomText bold fontSize={14} color={Colors.LightGray2}>
+                    İptal
+                  </CustomText>
+                </Pressable>
+                <Pressable style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]} onPress={handleAddSpecialDays}>
+                  <CustomText bold fontSize={14} color={Colors.BrandPrimary}>
+                    Seçilenleri ekle
+                  </CustomText>
+                </Pressable>
+              </View>
             </View>
           </TouchableWithoutFeedback>
         </View>
@@ -744,7 +730,7 @@ const styles = StyleSheet.create({
   headerRightSpacer: { width: 40, height: 40 },
   scroll: { flex: 1 },
   section: { gap: 12 },
-  specialDaysSection: { gap: 12 , marginBottom:50},
+  specialDaysSection: { gap: 12, marginBottom: 50 },
   sectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 2 },
   cardSection: {
     backgroundColor: Colors.White,
