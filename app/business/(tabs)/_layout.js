@@ -9,7 +9,7 @@ import CustomText from "@/components/high-level/custom-text";
 import { Colors } from "@/constants/colors";
 
 const TAB_ITEMS = [
-  { name: "index", label: "Anasayfa", icon: "home", iconOutline: "home-outline" },
+  { name: "home", label: "Anasayfa", icon: "home", iconOutline: "home-outline" },
   { name: "appointments", label: "Randevular", icon: "calendar", iconOutline: "calendar-outline" },
   { name: "requests", label: "Talepler", icon: "file-tray-full", iconOutline: "file-tray-full-outline" },
   { name: "management", label: "Yönetim", icon: "grid", iconOutline: "grid-outline" },
@@ -108,7 +108,7 @@ export default function BusinessTabsLayout() {
 
   return (
     <Tabs tabBar={(props) => <AnimatedTabBar {...props} />} screenOptions={{ headerShown: false }}>
-      <Tabs.Screen name="index" />
+      <Tabs.Screen name="home" />
       <Tabs.Screen name="appointments" />
       <Tabs.Screen name="requests" />
       <Tabs.Screen name="management" />
