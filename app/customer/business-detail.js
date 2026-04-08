@@ -1,6 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Linking, ScrollView, StyleSheet, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Dimensions, FlatList, Linking, Modal, Pressable, ScrollView, StatusBar, StyleSheet, View } from "react-native";
 import { Image } from "expo-image";
+
+const SCREEN_WIDTH = Dimensions.get("window").width;
+const SCREEN_HEIGHT = Dimensions.get("window").height;
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -10,9 +13,20 @@ import LayoutView from "@/components/high-level/layout-view";
 import CustomButton from "@/components/high-level/custom-button";
 import CustomText from "@/components/high-level/custom-text";
 import CustomTouchableOpacity from "@/components/high-level/custom-touchable-opacity";
-import CustomerServiceItem from "@/components/high-level/customer-service-item";
-import CustomerTeamMember from "@/components/high-level/customer-team-member";
+import CustomerServiceItem from "@/components/customer/service-item";
+import CustomerTeamMember from "@/components/customer/team-member";
 import { Colors } from "@/constants/colors";
+import CommandBus from "@/infrastructures/command-bus/command-bus";
+
+const DAYS_ORDER = [
+  { dayIndex: 1, label: "Pazartesi" },
+  { dayIndex: 2, label: "Salı" },
+  { dayIndex: 3, label: "Çarşamba" },
+  { dayIndex: 4, label: "Perşembe" },
+  { dayIndex: 5, label: "Cuma" },
+  { dayIndex: 6, label: "Cumartesi" },
+  { dayIndex: 0, label: "Pazar" },
+];
 
 const STATIC_RATING = "4.8";
 const STATIC_REVIEW_COUNT = 124;
@@ -21,7 +35,45 @@ const STATIC_REVIEW_DISTRIBUTION = [
   { label: "4", percent: 15 },
   { label: "3", percent: 4 },
 ];
-const STATIC_CLOSES_AT = "18:00'de kapanıyor";
+function getBusinessStatus(workingHours) {
+  if (!workingHours) return { isOpen: false, label: null };
+
+  const now = new Date();
+  const dayIndex = now.getDay();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const todayEntry = workingHours[String(dayIndex)];
+
+  const parseMinutes = (timeStr) => {
+    const [h, m] = timeStr.split(":").map(Number);
+    return h * 60 + m;
+  };
+
+  if (todayEntry?.enabled) {
+    const start = parseMinutes(todayEntry.start);
+    const end = parseMinutes(todayEntry.end);
+
+    if (currentMinutes >= start && currentMinutes < end) {
+      return { isOpen: true, label: `${todayEntry.end}'de kapanıyor` };
+    }
+    if (currentMinutes < start) {
+      return { isOpen: false, label: `${todayEntry.start}'de açılıyor` };
+    }
+  }
+
+  // Bugün kapalı — sonraki açık günü bul
+  for (let offset = 1; offset <= 7; offset++) {
+    const nextDayIndex = (dayIndex + offset) % 7;
+    const nextEntry = workingHours[String(nextDayIndex)];
+    if (nextEntry?.enabled) {
+      const dayNames = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
+      const label = offset === 1 ? `Yarın ${nextEntry.start}'de açılıyor` : `${dayNames[nextDayIndex]} ${nextEntry.start}'de açılıyor`;
+      return { isOpen: false, label };
+    }
+  }
+
+  return { isOpen: false, label: "Kapalı" };
+}
 
 const BusinessDetail = () => {
   const insets = useSafeAreaInsets();
@@ -35,7 +87,8 @@ const BusinessDetail = () => {
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
-  const [galleryTab, setGalleryTab] = useState("venue");
+  const [lightbox, setLightbox] = useState({ visible: false, images: [], index: 0 });
+  const lightboxRef = useRef(null);
 
   useEffect(() => {
     if (!businessId) return;
@@ -45,12 +98,7 @@ const BusinessDetail = () => {
 
     const favRef = uid ? getDoc(doc(db, "users", uid, "favorites", businessId)) : Promise.resolve(null);
 
-    Promise.all([
-      getDoc(doc(db, "businesses", businessId)),
-      getDocs(collection(db, "businesses", businessId, "services")),
-      getDocs(collection(db, "businesses", businessId, "employees")),
-      favRef,
-    ])
+    Promise.all([getDoc(doc(db, "businesses", businessId)), getDocs(collection(db, "businesses", businessId, "services")), getDocs(collection(db, "businesses", businessId, "employees")), favRef])
       .then(([businessSnap, servicesSnap, employeesSnap, favSnap]) => {
         if (businessSnap.exists()) {
           setBusiness({ id: businessSnap.id, ...businessSnap.data() });
@@ -103,9 +151,11 @@ const BusinessDetail = () => {
       if (isFavorite) {
         await deleteDoc(favRef);
         setIsFavorite(false);
+        CommandBus.sc.alertSuccess("Favori kaldırıldı", "İşletme favorilerinizden kaldırıldı.", 2200);
       } else {
         await setDoc(favRef, { businessId, savedAt: new Date() });
         setIsFavorite(true);
+        CommandBus.sc.alertSuccess("Favori eklendi", "İşletme favorilerinize eklendi.", 2200);
       }
     } catch (err) {
       console.error("Favorite toggle error:", err);
@@ -119,13 +169,16 @@ const BusinessDetail = () => {
     Linking.openURL(`https://maps.google.com/?q=${query}`);
   };
 
+  const openLightbox = (images, index) => setLightbox({ visible: true, images, index });
+  const closeLightbox = () => setLightbox({ visible: false, images: [], index: 0 });
+
   const title = business?.businessName ?? "İşletme";
   const location = business?.address ?? "";
   const venuePhotos = Array.isArray(business?.venuePhotos) ? business.venuePhotos : [];
-  const operationPhotos = Array.isArray(business?.operationPhotos) ? business.operationPhotos : [];
-  const hasMultipleGalleryTabs = venuePhotos.length > 0 && operationPhotos.length > 0;
-  const activeGalleryImages = galleryTab === "venue" ? venuePhotos : operationPhotos;
-  const hasAnyPhotos = venuePhotos.length > 0 || operationPhotos.length > 0;
+  const operationPhotos = Array.isArray(business?.servicePhotos) ? business.servicePhotos : [];
+  const businessStatus = getBusinessStatus(business?.workingHours);
+  const hasVenue = venuePhotos.length > 0;
+  const hasOperation = operationPhotos.length > 0;
   const firstService = services[0] ?? null;
 
   if (loading) {
@@ -142,74 +195,94 @@ const BusinessDetail = () => {
       title={title}
       rightButton={
         <CustomTouchableOpacity activeOpacity={0.7} onPress={handleToggleFavorite} disabled={favoriteLoading}>
-          <Ionicons
-            name={isFavorite ? "heart" : "heart-outline"}
-            size={22}
-            color={isFavorite ? Colors.BrandGold : Colors.BrandPrimary}
-          />
+          <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={22} color={isFavorite ? Colors.BrandGold : Colors.BrandPrimary} />
         </CustomTouchableOpacity>
       }
       style={styles.contentWrapper}
     >
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 96 }]}
-        showsVerticalScrollIndicator={false}
-      >
-        {hasAnyPhotos && (
-          <>
-            {hasMultipleGalleryTabs && (
-              <View style={styles.galleryTabRow}>
-                <CustomTouchableOpacity
-                  activeOpacity={0.8}
-                  style={[styles.galleryTabPill, galleryTab === "venue" && styles.galleryTabPillActive]}
-                  onPress={() => setGalleryTab("venue")}
-                >
-                  <Ionicons name="business-outline" size={13} color={galleryTab === "venue" ? Colors.White : Colors.LightGray} />
-                  <CustomText bold fontSize={12} color={galleryTab === "venue" ? Colors.White : Colors.LightGray}>
-                    Mekan
-                  </CustomText>
+      <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: insets.bottom + 96 }} showsVerticalScrollIndicator={false}>
+        {hasVenue && (
+          <View style={styles.photoSection}>
+            <View style={styles.photoSectionHeader}>
+              <Ionicons name="business-outline" size={15} color={Colors.BrandPrimary} />
+              <CustomText bold sm color={Colors.BrandPrimary}>
+                Mekan
+              </CustomText>
+              <CustomText xs color={Colors.LightGray}>
+                {venuePhotos.length} fotoğraf
+              </CustomText>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.photoRow}>
+              {venuePhotos.map((uri, index) => (
+                <CustomTouchableOpacity key={`venue-${index}`} activeOpacity={0.88} onPress={() => openLightbox(venuePhotos, index)}>
+                  <View style={styles.photoThumb}>
+                    <Image source={{ uri }} style={styles.photoThumbImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
+                    <View style={styles.photoExpandIcon}>
+                      <Ionicons name="expand-outline" size={13} color={Colors.White} />
+                    </View>
+                  </View>
                 </CustomTouchableOpacity>
-                <CustomTouchableOpacity
-                  activeOpacity={0.8}
-                  style={[styles.galleryTabPill, galleryTab === "operations" && styles.galleryTabPillActive]}
-                  onPress={() => setGalleryTab("operations")}
-                >
-                  <Ionicons name="cut-outline" size={13} color={galleryTab === "operations" ? Colors.White : Colors.LightGray} />
-                  <CustomText bold fontSize={12} color={galleryTab === "operations" ? Colors.White : Colors.LightGray}>
-                    İşlemler
-                  </CustomText>
-                </CustomTouchableOpacity>
-              </View>
-            )}
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.galleryContent}
-              key={galleryTab}
-            >
-              {activeGalleryImages.map((imageUri, index) => (
-                <View key={`gallery-${index}`} style={[styles.galleryCard, index > 0 && styles.galleryCardSmall]}>
-                  <Image
-                    source={{ uri: imageUri }}
-                    style={styles.galleryImage}
-                    contentFit="cover"
-                    cachePolicy="memory-disk"
-                    transition={200}
-                    placeholder={styles.galleryPlaceholder}
-                  />
-                </View>
               ))}
             </ScrollView>
-
-            <View style={styles.dotsRow}>
-              {activeGalleryImages.map((_, index) => (
-                <View key={`dot-${index}`} style={[styles.dot, index === 0 ? styles.dotActive : null]} />
-              ))}
-            </View>
-          </>
+          </View>
         )}
+
+        {hasOperation && (
+          <View style={styles.photoSection}>
+            <View style={styles.photoSectionHeader}>
+              <Ionicons name="cut-outline" size={15} color={Colors.BrandPrimary} />
+              <CustomText bold sm color={Colors.BrandPrimary}>
+                İşlem Fotoğrafları
+              </CustomText>
+              <CustomText xs color={Colors.LightGray}>
+                {operationPhotos.length} fotoğraf
+              </CustomText>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.photoRow}>
+              {operationPhotos.map((uri, index) => (
+                <CustomTouchableOpacity key={`op-${index}`} activeOpacity={0.88} onPress={() => openLightbox(operationPhotos, index)}>
+                  <View style={styles.photoThumb}>
+                    <Image source={{ uri }} style={styles.photoThumbImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
+                    <View style={styles.photoExpandIcon}>
+                      <Ionicons name="expand-outline" size={13} color={Colors.White} />
+                    </View>
+                  </View>
+                </CustomTouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        <Modal visible={lightbox.visible} transparent animationType="fade" onRequestClose={closeLightbox} statusBarTranslucent>
+          <StatusBar barStyle="light-content" backgroundColor="#000" />
+          <View style={styles.lightboxOverlay}>
+            <Pressable style={styles.lightboxClose} onPress={closeLightbox}>
+              <Ionicons name="close" size={26} color={Colors.White} />
+            </Pressable>
+            <CustomText xs color="rgba(255,255,255,0.6)" style={styles.lightboxCounter}>
+              {lightbox.index + 1} / {lightbox.images.length}
+            </CustomText>
+            <FlatList
+              ref={lightboxRef}
+              data={lightbox.images}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              initialScrollIndex={lightbox.index}
+              getItemLayout={(_, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}
+              keyExtractor={(_, i) => String(i)}
+              onMomentumScrollEnd={(e) => {
+                const newIndex = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+                setLightbox((prev) => ({ ...prev, index: newIndex }));
+              }}
+              renderItem={({ item }) => (
+                <View style={styles.lightboxImageWrapper}>
+                  <Image source={{ uri: item }} style={styles.lightboxImage} contentFit="contain" cachePolicy="memory-disk" />
+                </View>
+              )}
+            />
+          </View>
+        </Modal>
 
         <View style={styles.sectionCard}>
           <CustomText extraBold headerxl color={Colors.BrandPrimary}>
@@ -226,14 +299,18 @@ const BusinessDetail = () => {
           )}
 
           <View style={styles.statusRow}>
-            <View style={styles.statusBadge}>
-              <CustomText semibold xs color="#15803D">
-                Open Now
+            {business?.workingHours ? (
+              <View style={[styles.statusBadge, !businessStatus.isOpen && styles.statusBadgeClosed]}>
+                <CustomText semibold xs color={businessStatus.isOpen ? "#15803D" : "#B91C1C"}>
+                  {businessStatus.isOpen ? "Açık" : "Kapalı"}
+                </CustomText>
+              </View>
+            ) : null}
+            {businessStatus.label ? (
+              <CustomText sm color={Colors.LightGray}>
+                {businessStatus.label}
               </CustomText>
-            </View>
-            <CustomText sm color={Colors.LightGray}>
-              {STATIC_CLOSES_AT}
-            </CustomText>
+            ) : null}
             <CustomTouchableOpacity activeOpacity={0.7} onPress={() => location && handleOpenMaps(location)}>
               <CustomText sm color={Colors.BrandGold}>
                 Haritada Gör
@@ -300,6 +377,38 @@ const BusinessDetail = () => {
           </View>
         )}
 
+        {business?.workingHours && (
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="time-outline" size={16} color={Colors.BrandPrimary} />
+              <CustomText bold lg color={Colors.BrandPrimary}>
+                Çalışma Saatleri
+              </CustomText>
+            </View>
+            {DAYS_ORDER.map(({ dayIndex, label }) => {
+              const entry = business.workingHours[String(dayIndex)];
+              const isToday = new Date().getDay() === dayIndex;
+              const isOpen = entry?.enabled ?? false;
+              return (
+                <View key={dayIndex} style={[styles.hoursRow, isToday && styles.hoursRowToday]}>
+                  <CustomText sm semibold={isToday} color={isToday ? Colors.BrandPrimary : Colors.TextColor} style={styles.hoursDay}>
+                    {label}
+                  </CustomText>
+                  {isOpen ? (
+                    <CustomText sm color={isToday ? Colors.BrandPrimary : Colors.LightGray}>
+                      {entry.start} – {entry.end}
+                    </CustomText>
+                  ) : (
+                    <CustomText sm color={Colors.ErrorColor ?? "#EF4444"}>
+                      Kapalı
+                    </CustomText>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        )}
+
         {services.length > 0 && (
           <View style={styles.sectionCard}>
             <CustomText bold lg color={Colors.BrandPrimary} style={styles.servicesTitle}>
@@ -355,67 +464,90 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  container: {
-    paddingTop: 14,
+  photoSection: {
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F1F1",
   },
-  galleryTabRow: {
+  photoSectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 6,
     paddingHorizontal: 20,
     marginBottom: 12,
   },
-  galleryTabPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: "#F1F1F1",
-  },
-  galleryTabPillActive: {
-    backgroundColor: Colors.BrandPrimary,
-  },
-  galleryContent: {
+  photoRow: {
     paddingHorizontal: 20,
-    gap: 12,
+    gap: 10,
   },
-  galleryCard: {
-    width: 300,
-    height: 250,
-    borderRadius: 18,
+  photoThumb: {
+    width: 100,
+    height: 100,
+    borderRadius: 14,
     overflow: "hidden",
     backgroundColor: "#E5E7EB",
   },
-  galleryCardSmall: {
-    width: 255,
-  },
-  galleryImage: {
+  photoThumbImg: {
     width: "100%",
     height: "100%",
   },
-  galleryPlaceholder: {
-    backgroundColor: "#E5E7EB",
-  },
-  dotsRow: {
-    flexDirection: "row",
-    justifyContent: "center",
+  photoExpandIcon: {
+    position: "absolute",
+    bottom: 8,
+    right: 8,
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    backgroundColor: "rgba(0,0,0,0.45)",
     alignItems: "center",
-    gap: 6,
-    marginTop: 12,
-    marginBottom: 10,
+    justifyContent: "center",
   },
-  dot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: "rgba(20,20,20,0.22)",
+  lightboxOverlay: {
+    flex: 1,
+    backgroundColor: "#000",
+    justifyContent: "center",
   },
-  dotActive: {
-    backgroundColor: Colors.White,
-    borderWidth: 1,
-    borderColor: "rgba(20,20,20,0.12)",
+  lightboxClose: {
+    position: "absolute",
+    top: 52,
+    right: 20,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  lightboxCounter: {
+    position: "absolute",
+    top: 60,
+    alignSelf: "center",
+    zIndex: 10,
+  },
+  lightboxImageWrapper: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+    justifyContent: "center",
+  },
+  lightboxImage: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT * 0.75,
+  },
+  hoursRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    borderRadius: 8,
+  },
+  hoursRowToday: {
+    backgroundColor: "rgba(212,175,55,0.1)",
+    paddingHorizontal: 10,
+  },
+  hoursDay: {
+    width: 110,
   },
   sectionCard: {
     paddingHorizontal: 20,
@@ -444,6 +576,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 6,
+  },
+  statusBadgeClosed: {
+    backgroundColor: "#FEF2F2",
   },
   reviewBlock: {
     gap: 18,
@@ -497,6 +632,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    gap: 8,
     marginBottom: 16,
   },
   teamList: {

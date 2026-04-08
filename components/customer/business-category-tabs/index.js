@@ -4,22 +4,23 @@ import CustomText from "@/components/high-level/custom-text";
 import CustomTouchableOpacity from "@/components/high-level/custom-touchable-opacity";
 import { Colors } from "@/constants/colors";
 
+const ALL = "all";
+
 const CustomerBusinessCategoryTabs = ({ categories, selectedCategory, onSelectCategory }) => {
   return (
     <View style={styles.wrapper}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.contentContainer}>
-        {categories.map((category) => {
-          const isSelected = category.id === selectedCategory;
-
+        {[ALL, ...categories].map((cat) => {
+          const isSelected = cat === selectedCategory;
           return (
             <CustomTouchableOpacity
-              key={category.id}
+              key={cat}
               style={[styles.tabButton, isSelected && styles.tabButtonActive]}
               activeOpacity={0.9}
-              onPress={() => onSelectCategory?.(category.id)}
+              onPress={() => onSelectCategory?.(cat)}
             >
               <CustomText semibold sm color={isSelected ? Colors.White : Colors.BrandPrimary}>
-                {category.label}
+                {cat === ALL ? "Tümü" : cat}
               </CustomText>
             </CustomTouchableOpacity>
           );

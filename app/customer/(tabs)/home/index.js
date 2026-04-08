@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { ImageBackground, View, StyleSheet, ScrollView, StatusBar } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { collection, getDocs } from "firebase/firestore";
@@ -11,9 +11,11 @@ import CustomText from "@/components/high-level/custom-text";
 import { Colors } from "@/constants/colors";
 import CustomImage from "@/components/high-level/custom-image";
 import CustomTouchableOpacity from "@/components/high-level/custom-touchable-opacity";
-import CustomerHomeCarousel from "@/components/high-level/customer-home-carousel";
-import CustomerCategoryGrid from "@/components/high-level/customer-category-grid";
-import CustomerPopularNearYou from "@/components/high-level/customer-popular-near-you";
+import CustomerHomeCarousel from "@/components/customer/home-carousel";
+import CustomerCategoryGrid from "@/components/customer/category-grid";
+import CustomerPopularNearYou from "@/components/customer/popular-near-you";
+
+const BG = require("@/assets/bg.png");
 
 export default function CustomerAnaSayfa() {
   const insets = useSafeAreaInsets();
@@ -48,33 +50,34 @@ export default function CustomerAnaSayfa() {
     router.push({ pathname: "/customer/business-detail", params: { id } });
   };
 
-  return (
-    <LayoutView isActiveHeader={false}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.container,
-          {
-            paddingTop: 16,
-            paddingBottom: insets.bottom + 89,
-          },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.headerBlock}>
-          <View style={styles.headerTitle}>
-            <CustomTouchableOpacity onPress={openDrawerMenu} style={styles.drawerButton} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-              <Ionicons name="menu" size={26} color={Colors.BrandDark} />
-            </CustomTouchableOpacity>
-            <CustomImage uri={require("@/assets/logo1.png")} isLocalFile style={styles.headerLogo} contentFit="contain" />
-            <CustomText usePrimaryColor semibold lg>
-              BuRandevu
-            </CustomText>
-          </View>
-        </View>
+  const categoryCounts = businesses.reduce((acc, b) => {
+    if (b.category) acc[b.category] = (acc[b.category] ?? 0) + 1;
+    return acc;
+  }, {});
 
+  const header = (
+    <ImageBackground source={BG} style={[styles.headerBg, { paddingTop: insets.top + 10 }]} resizeMode="cover">
+      <StatusBar barStyle="light-content" />
+      <View style={styles.headerTitle}>
+        <CustomTouchableOpacity onPress={openDrawerMenu} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+          <Ionicons name="menu" size={26} color={Colors.White} />
+        </CustomTouchableOpacity>
+        <View style={styles.headerLogoRow}>
+          <CustomImage uri={require("@/assets/logo1.png")} isLocalFile style={styles.headerLogo} contentFit="contain" />
+          <CustomText color={Colors.White} semibold lg>
+            BuRandevu
+          </CustomText>
+        </View>
+        <View style={styles.headerRight} />
+      </View>
+    </ImageBackground>
+  );
+
+  return (
+    <LayoutView isActiveHeader={false} paddingTop={0} paddingHorizontal={0} customHeader={header}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 89 }]} showsVerticalScrollIndicator={false}>
         <CustomerHomeCarousel />
-        <CustomerCategoryGrid onCategoryPress={handleCategoryPress} onViewAllPress={handleViewAllPress} />
+        <CustomerCategoryGrid onCategoryPress={handleCategoryPress} onViewAllPress={handleViewAllPress} categoryCounts={categoryCounts} />
         <CustomerPopularNearYou businesses={businesses} loading={loadingBusinesses} onItemPress={handlePopularItemPress} />
       </ScrollView>
     </LayoutView>
@@ -82,28 +85,33 @@ export default function CustomerAnaSayfa() {
 }
 
 const styles = StyleSheet.create({
-  headerBlock: {
-    marginBottom: 1,
+  headerBg: {
+    paddingHorizontal: 20,
+    paddingBottom: 22,
   },
   headerTitle: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+  },
+  headerLogoRow: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
-  },
-  drawerButton: {
-    padding: 2,
-  },
-  headerDescription: {
-    paddingLeft: 2,
   },
   headerLogo: {
     width: 28,
     height: 28,
   },
+  headerRight: {
+    width: 26,
+  },
   scrollView: {
     flex: 1,
   },
   container: {
+    paddingTop: 16,
     paddingBottom: 24,
+    paddingHorizontal: 20,
   },
 });

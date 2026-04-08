@@ -6,10 +6,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LayoutView from "@/components/high-level/layout-view";
 import CustomText from "@/components/high-level/custom-text";
 import CustomTouchableOpacity from "@/components/high-level/custom-touchable-opacity";
-import CustomerBusinessCard from "@/components/high-level/customer-business-card";
-import CustomerBusinessCategoryTabs from "@/components/high-level/customer-business-category-tabs";
+import CustomerBusinessCard from "@/components/customer/business-card";
+import CustomerBusinessCategoryTabs from "@/components/customer/business-category-tabs";
 import { Colors } from "@/constants/colors";
-import { BUSINESS_CATEGORIES, BUSINESS_ITEMS } from "@/constants/customer-businesses";
+import { BUSINESS_CATEGORIES } from "@/enums/business-category-enum";
+import { BUSINESS_ITEMS } from "@/constants/customer-businesses";
 
 const BusinessList = () => {
   const insets = useSafeAreaInsets();
@@ -20,6 +21,7 @@ const BusinessList = () => {
     if (selectedCategory === "all") return BUSINESS_ITEMS;
     return BUSINESS_ITEMS.filter((item) => item.category === selectedCategory);
   }, [selectedCategory]);
+
 
   return (
     <LayoutView

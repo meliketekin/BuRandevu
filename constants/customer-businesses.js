@@ -1,12 +1,3 @@
-export const BUSINESS_CATEGORIES = [
-  { id: "all", label: "Tümü" },
-  { id: "hair", label: "Saç" },
-  { id: "nails", label: "Tırnak" },
-  { id: "makeup", label: "Makyaj" },
-  { id: "spa", label: "Spa" },
-  { id: "barber", label: "Berber" },
-];
-
 export const BUSINESS_ITEMS = [
   {
     id: "luxe-hair-studio",

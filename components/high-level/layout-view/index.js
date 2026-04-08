@@ -34,6 +34,7 @@ const LayoutView = ({
   showFormButton = false,
   formButtonName = "Ekle",
   formButtonPress = () => {},
+  customHeader,
 }) => {
   const deviceInsets = useSafeAreaInsets();
 
@@ -84,6 +85,7 @@ const LayoutView = ({
 
   return (
     <View style={containerStyle}>
+      {customHeader && customHeader}
       {isActiveHeader && (
         <View style={headerStyle}>
           <TouchableOpacity
