@@ -5,9 +5,9 @@ import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import { Animated, Pressable, StyleSheet, View } from "react-native";
 import { Easing } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { openModal } from "../modal-renderer";
+import { openModal } from "@/components/high-level/modal-renderer";
 import { ModalTypeEnum } from "@/enums/modal-type-enum";
-import CustomText from "../custom-text";
+import CustomText from "@/components/high-level/custom-text";
 
 const CustomSelect = ({
   label = "",
@@ -33,10 +33,7 @@ const CustomSelect = ({
   const resolvedHeight = useMemo(() => height ?? DEFAULT_FORM_CONTROL_HEIGHT, [height]);
 
   const APPROX_LABEL_LINE_HEIGHT = 22;
-  const idleTranslateY = useMemo(
-    () => Math.max(0, Math.round((resolvedHeight - APPROX_LABEL_LINE_HEIGHT) / 2)),
-    [resolvedHeight],
-  );
+  const idleTranslateY = useMemo(() => Math.max(0, Math.round((resolvedHeight - APPROX_LABEL_LINE_HEIGHT) / 2)), [resolvedHeight]);
 
   const transY = useRef(new Animated.Value(hasValue ? 8 : idleTranslateY));
   const fontSizeValue = useRef(new Animated.Value(hasValue ? 12 : 16));
@@ -100,26 +97,15 @@ const CustomSelect = ({
     >
       {label && (
         <Animated.View style={[styles.labelContainer, { transform: [{ translateY: transY.current }] }]} pointerEvents="none">
-          <Animated.Text style={[styles.label, { color: Colors.InputPlaceholderColor, fontSize: fontSizeValue.current, fontFamily }]}>
-            {required ? `${label} *` : label}
-          </Animated.Text>
+          <Animated.Text style={[styles.label, { color: Colors.InputPlaceholderColor, fontSize: fontSizeValue.current, fontFamily }]}>{required ? `${label} *` : label}</Animated.Text>
         </Animated.View>
       )}
 
-      <Pressable
-        style={StyleSheet.absoluteFillObject}
-        onPress={selectModalProps ? () => openModal(ModalTypeEnum.SelectModal, selectModalProps) : onPress}
-        disabled={disabled}
-      >
+      <Pressable style={StyleSheet.absoluteFillObject} onPress={selectModalProps ? () => openModal(ModalTypeEnum.SelectModal, selectModalProps) : onPress} disabled={disabled}>
         <View style={[styles.row, hasValue && label && styles.rowWithValue, { paddingRight: rowPaddingRight }]}>
           {/* Boş değerde CustomText null döner; flex:1 kaybolmasın diye slot her zaman durur — chevron sağda kalır */}
           <View style={styles.valueSlot}>
-            <CustomText
-              fontSize={14}
-              color={hasValue ? Colors.TextColor : Colors.InputPlaceholderColor}
-              style={styles.valueText}
-              numberOfLines={1}
-            >
+            <CustomText fontSize={14} color={hasValue ? Colors.TextColor : Colors.InputPlaceholderColor} style={styles.valueText} numberOfLines={1}>
               {hasValue ? value : !label ? (required ? `${placeholder} *` : placeholder) : ""}
             </CustomText>
           </View>

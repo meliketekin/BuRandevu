@@ -128,11 +128,11 @@ export default function ServiceForm() {
       };
 
       if (isEditMode && serviceId) {
-        await updateDoc(doc(db, "users", uid, "services", serviceId), data);
+        await updateDoc(doc(db, "businesses", uid, "services", serviceId), data);
         CommandBus.sc.alertSuccess("Güncellendi", `"${serviceName.trim()}" kaydedildi.`, 2400);
         router.back();
       } else {
-        await addDoc(collection(db, "users", uid, "services"), {
+        await addDoc(collection(db, "businesses", uid, "services"), {
           ...data,
           isActive: true,
           createdAt: serverTimestamp(),

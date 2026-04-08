@@ -1,7 +1,7 @@
 import React from "react";
 import { ActivityIndicator, View } from "react-native";
-import CustomText from "../custom-text";
-import CustomTouchableOpacity from "../custom-touchable-opacity";
+import CustomText from "@/components/high-level/custom-text";
+import CustomTouchableOpacity from "@/components/high-level/custom-touchable-opacity";
 import { Colors } from "@/constants/colors";
 
 const CustomButton = ({

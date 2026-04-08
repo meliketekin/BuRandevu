@@ -5,8 +5,6 @@ export default function CustomerHomeLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="business-list" options={{ headerShown: false }} />
-      <Stack.Screen name="business-detail" options={{ headerShown: false }} />
-      <Stack.Screen name="create-appointment" options={{ headerShown: false }} />
     </Stack>
   );
 }

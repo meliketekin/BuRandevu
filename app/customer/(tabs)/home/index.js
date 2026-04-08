@@ -45,7 +45,7 @@ export default function CustomerAnaSayfa() {
   };
 
   const handlePopularItemPress = (id) => {
-    router.push({ pathname: "/customer/home/business-detail", params: { id } });
+    router.push({ pathname: "/customer/business-detail", params: { id } });
   };
 
   return (
@@ -66,7 +66,7 @@ export default function CustomerAnaSayfa() {
             <CustomTouchableOpacity onPress={openDrawerMenu} style={styles.drawerButton} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
               <Ionicons name="menu" size={26} color={Colors.BrandDark} />
             </CustomTouchableOpacity>
-            <CustomImage uri={require("../../../assets/logo1.png")} isLocalFile style={styles.headerLogo} contentFit="contain" />
+            <CustomImage uri={require("@/assets/logo1.png")} isLocalFile style={styles.headerLogo} contentFit="contain" />
             <CustomText usePrimaryColor semibold lg>
               BuRandevu
             </CustomText>

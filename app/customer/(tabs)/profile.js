@@ -6,10 +6,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase";
-import LayoutView from "../../components/high-level/layout-view";
-import CustomText from "../../components/high-level/custom-text";
-import { Colors } from "../../constants/colors";
-import CommandBus from "../../infrastructures/command-bus/command-bus";
+import LayoutView from "@/components/high-level/layout-view";
+import CustomText from "@/components/high-level/custom-text";
+import { Colors } from "@/constants/colors";
+import CommandBus from "@/infrastructures/command-bus/command-bus";
 
 const PROFILE_MENU = [
   {
@@ -85,11 +85,7 @@ export default function CustomerProfil() {
         </View>
       }
     >
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 24 }]}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={styles.scrollView} contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 24 }]} showsVerticalScrollIndicator={false}>
         <View style={styles.profileHeader}>
           <View style={styles.avatarWrapper}>
             <View style={styles.avatarRing}>

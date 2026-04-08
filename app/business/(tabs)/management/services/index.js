@@ -40,7 +40,7 @@ export default function Services() {
         }
         setDeletingId(service.id);
         try {
-          await deleteDoc(doc(db, "users", uid, "services", service.id));
+          await deleteDoc(doc(db, "businesses", uid, "services", service.id));
         } catch (e) {
           console.error("Service delete error:", e);
           CommandBus.sc.alertError("Hata", e?.message ?? "Hizmet silinirken bir sorun oluştu.", 3200);
@@ -56,7 +56,7 @@ export default function Services() {
     if (!uid) { setLoading(false); return; }
 
     const q = query(
-      collection(db, "users", uid, "services"),
+      collection(db, "businesses", uid, "services"),
       orderBy("createdAt", "desc"),
     );
 

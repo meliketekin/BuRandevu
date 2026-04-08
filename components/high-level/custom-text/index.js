@@ -1,5 +1,5 @@
-import { Colors } from "../../../constants/colors";
-import general from "../../../utils/general";
+import { Colors } from "@/constants/colors";
+import general from "@/utils/general";
 import React, { useMemo } from "react";
 import { Text } from "react-native";
 

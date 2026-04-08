@@ -1,12 +1,12 @@
-import { Colors } from "../../../constants/colors";
+import { Colors } from "@/constants/colors";
 import { router } from "expo-router";
 import { memo, useMemo } from "react";
 import { Keyboard, Pressable, ScrollView, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import CustomButton from "../custom-button";
-import CustomText from "../custom-text";
+import CustomButton from "@/components/high-level/custom-button";
+import CustomText from "@/components/high-level/custom-text";
 
 const LayoutView = ({
   children,

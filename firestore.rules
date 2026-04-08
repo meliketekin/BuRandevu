@@ -1,25 +1,26 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Kullanıcı profil belgesi — sadece kendisi okur/yazar
     match /users/{uid} {
       allow read, write: if request.auth.uid == uid;
     }
 
-    match /users/{uid}/services/{serviceId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth.uid == uid;
-    }
-
-    match /users/{uid}/employees/{employeeId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth.uid == uid;
-    }
-
+    // Favoriler — sadece kendi kullanıcısı okur/yazar
     match /users/{uid}/favorites/{businessId} {
       allow read, write: if request.auth.uid == uid;
     }
 
+    // İşletme bilgisi — herkes okuyabilir, sadece sahibi yazar
     match /businesses/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth.uid == uid;
+    }
+
+    // İşletmeye ait tüm alt koleksiyonlar (services, employees, vb.)
+    // Herkes okuyabilir (müşteri randevu alımı için gerekli), sadece sahibi yazar
+    match /businesses/{uid}/{collection}/{docId} {
       allow read: if request.auth != null;
       allow write: if request.auth.uid == uid;
     }

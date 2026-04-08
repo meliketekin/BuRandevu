@@ -35,6 +35,7 @@ const BusinessDetail = () => {
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [galleryTab, setGalleryTab] = useState("venue");
 
   useEffect(() => {
     if (!businessId) return;
@@ -46,8 +47,8 @@ const BusinessDetail = () => {
 
     Promise.all([
       getDoc(doc(db, "businesses", businessId)),
-      getDocs(collection(db, "users", businessId, "services")),
-      getDocs(collection(db, "users", businessId, "employees")),
+      getDocs(collection(db, "businesses", businessId, "services")),
+      getDocs(collection(db, "businesses", businessId, "employees")),
       favRef,
     ])
       .then(([businessSnap, servicesSnap, employeesSnap, favSnap]) => {
@@ -120,7 +121,11 @@ const BusinessDetail = () => {
 
   const title = business?.businessName ?? "İşletme";
   const location = business?.address ?? "";
-  const galleryImages = Array.isArray(business?.venuePhotos) ? business.venuePhotos : [];
+  const venuePhotos = Array.isArray(business?.venuePhotos) ? business.venuePhotos : [];
+  const operationPhotos = Array.isArray(business?.operationPhotos) ? business.operationPhotos : [];
+  const hasMultipleGalleryTabs = venuePhotos.length > 0 && operationPhotos.length > 0;
+  const activeGalleryImages = galleryTab === "venue" ? venuePhotos : operationPhotos;
+  const hasAnyPhotos = venuePhotos.length > 0 || operationPhotos.length > 0;
   const firstService = services[0] ?? null;
 
   if (loading) {
@@ -138,7 +143,7 @@ const BusinessDetail = () => {
       rightButton={
         <CustomTouchableOpacity activeOpacity={0.7} onPress={handleToggleFavorite} disabled={favoriteLoading}>
           <Ionicons
-            name={isFavorite ? "bookmark" : "bookmark-outline"}
+            name={isFavorite ? "heart" : "heart-outline"}
             size={22}
             color={isFavorite ? Colors.BrandGold : Colors.BrandPrimary}
           />
@@ -151,10 +156,40 @@ const BusinessDetail = () => {
         contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 96 }]}
         showsVerticalScrollIndicator={false}
       >
-        {galleryImages.length > 0 && (
+        {hasAnyPhotos && (
           <>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryContent}>
-              {galleryImages.map((imageUri, index) => (
+            {hasMultipleGalleryTabs && (
+              <View style={styles.galleryTabRow}>
+                <CustomTouchableOpacity
+                  activeOpacity={0.8}
+                  style={[styles.galleryTabPill, galleryTab === "venue" && styles.galleryTabPillActive]}
+                  onPress={() => setGalleryTab("venue")}
+                >
+                  <Ionicons name="business-outline" size={13} color={galleryTab === "venue" ? Colors.White : Colors.LightGray} />
+                  <CustomText bold fontSize={12} color={galleryTab === "venue" ? Colors.White : Colors.LightGray}>
+                    Mekan
+                  </CustomText>
+                </CustomTouchableOpacity>
+                <CustomTouchableOpacity
+                  activeOpacity={0.8}
+                  style={[styles.galleryTabPill, galleryTab === "operations" && styles.galleryTabPillActive]}
+                  onPress={() => setGalleryTab("operations")}
+                >
+                  <Ionicons name="cut-outline" size={13} color={galleryTab === "operations" ? Colors.White : Colors.LightGray} />
+                  <CustomText bold fontSize={12} color={galleryTab === "operations" ? Colors.White : Colors.LightGray}>
+                    İşlemler
+                  </CustomText>
+                </CustomTouchableOpacity>
+              </View>
+            )}
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.galleryContent}
+              key={galleryTab}
+            >
+              {activeGalleryImages.map((imageUri, index) => (
                 <View key={`gallery-${index}`} style={[styles.galleryCard, index > 0 && styles.galleryCardSmall]}>
                   <Image
                     source={{ uri: imageUri }}
@@ -169,7 +204,7 @@ const BusinessDetail = () => {
             </ScrollView>
 
             <View style={styles.dotsRow}>
-              {galleryImages.map((_, index) => (
+              {activeGalleryImages.map((_, index) => (
                 <View key={`dot-${index}`} style={[styles.dot, index === 0 ? styles.dotActive : null]} />
               ))}
             </View>
@@ -286,7 +321,7 @@ const BusinessDetail = () => {
             title="Randevu Al"
             onPress={() =>
               router.push({
-                pathname: "/customer/home/create-appointment",
+                pathname: "/customer/create-appointment",
                 params: {
                   id: businessId,
                   serviceId: firstService.id,
@@ -322,6 +357,25 @@ const styles = StyleSheet.create({
   },
   container: {
     paddingTop: 14,
+  },
+  galleryTabRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 20,
+    marginBottom: 12,
+  },
+  galleryTabPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: "#F1F1F1",
+  },
+  galleryTabPillActive: {
+    backgroundColor: Colors.BrandPrimary,
   },
   galleryContent: {
     paddingHorizontal: 20,

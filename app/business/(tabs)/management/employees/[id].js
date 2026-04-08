@@ -39,7 +39,7 @@ export default function EmployeeDetail() {
 
     setLoading(true);
     const unsub = onSnapshot(
-      doc(db, "users", uid, "employees", employeeId),
+      doc(db, "businesses", uid, "employees", employeeId),
       (snap) => {
         if (snap.exists()) setEmployee({ id: snap.id, ...snap.data() });
         else setEmployee(null);
@@ -65,7 +65,7 @@ export default function EmployeeDetail() {
         if (!uid) return;
         setDeleting(true);
         try {
-          await deleteDoc(doc(db, "users", uid, "employees", employeeId));
+          await deleteDoc(doc(db, "businesses", uid, "employees", employeeId));
           CommandBus.sc.alertSuccess("Silindi", `${employee?.name ?? "Çalışan"} silindi.`, 2400);
           router.back();
         } catch (err) {

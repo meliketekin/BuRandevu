@@ -4,9 +4,9 @@ import general from "@/utils/general";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, StyleSheet, TextInput, View } from "react-native";
 import { Easing } from "react-native-reanimated";
-import CustomSvg from "../custom-svg";
-import CustomText from "../custom-text";
-import CustomTouchableOpacity from "../custom-touchable-opacity";
+import CustomSvg from "@/components/high-level/custom-svg";
+import CustomText from "@/components/high-level/custom-text";
+import CustomTouchableOpacity from "@/components/high-level/custom-touchable-opacity";
 
 const FormInput = ({
   secureTextEntry = false,
@@ -36,10 +36,7 @@ const FormInput = ({
   backgroundColor,
   borderColor,
 }) => {
-  const resolvedHeight = useMemo(
-    () => (multiline ? height ?? DEFAULT_FORM_MULTILINE_HEIGHT : height ?? DEFAULT_FORM_CONTROL_HEIGHT),
-    [multiline, height],
-  );
+  const resolvedHeight = useMemo(() => (multiline ? (height ?? DEFAULT_FORM_MULTILINE_HEIGHT) : (height ?? DEFAULT_FORM_CONTROL_HEIGHT)), [multiline, height]);
 
   /** Label boşta konumu: verilen / varsayılan yüksekliğe göre dikey ortalama */
   const APPROX_LABEL_LINE_HEIGHT = 22;
@@ -48,16 +45,9 @@ const FormInput = ({
     return resolvedHeight;
   }, [multiline, resolvedHeight]);
 
-  const idleTranslateY = useMemo(
-    () => Math.max(0, Math.round((labelLayoutHeight - APPROX_LABEL_LINE_HEIGHT) / 2)),
-    [labelLayoutHeight],
-  );
+  const idleTranslateY = useMemo(() => Math.max(0, Math.round((labelLayoutHeight - APPROX_LABEL_LINE_HEIGHT) / 2)), [labelLayoutHeight]);
 
-  const transY = useRef(
-    new Animated.Value(
-      !general.isNullOrEmpty(value) ? 8 : idleTranslateY,
-    ),
-  );
+  const transY = useRef(new Animated.Value(!general.isNullOrEmpty(value) ? 8 : idleTranslateY));
   const labelValue = useRef(new Animated.Value(0));
   const fontSizeValue = useRef(new Animated.Value(16));
 
@@ -155,9 +145,7 @@ const FormInput = ({
           ]}
           pointerEvents="none"
         >
-          <Animated.Text style={[styles.label, { color: Colors.InputPlaceholderColor, fontSize: fontSizeValue.current, fontFamily }]}>
-            {required ? `${label} *` : label}
-          </Animated.Text>
+          <Animated.Text style={[styles.label, { color: Colors.InputPlaceholderColor, fontSize: fontSizeValue.current, fontFamily }]}>{required ? `${label} *` : label}</Animated.Text>
         </Animated.View>
       )}
       <View style={styles.inputContainer}>

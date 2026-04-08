@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "@/constants/colors";
-import CustomButton from "../custom-button";
+import CustomButton from "@/components/high-level/custom-button";
 
 /**
  * Formların altında sabit duran kaydet/gönder çubuğu.
@@ -17,14 +17,7 @@ import CustomButton from "../custom-button";
  *                                          null geçilirse ikon gizlenir
  *   style        ViewStyle               – dış wrapper'a ek stil
  */
-const FormBottomBar = ({
-  label = "Kaydet",
-  onPress,
-  loading = false,
-  disabled = false,
-  icon = "checkmark",
-  style,
-}) => {
+const FormBottomBar = ({ label = "Kaydet", onPress, loading = false, disabled = false, icon = "checkmark", style }) => {
   const insets = useSafeAreaInsets();
 
   return (
@@ -39,11 +32,7 @@ const FormBottomBar = ({
         borderRadius={16}
         backgroundColor={Colors.BrandPrimary}
         titleStyle={styles.buttonTitle}
-        rightIcon={
-          icon ? (
-            <Ionicons name={icon} size={20} color={Colors.White} style={styles.buttonIcon} />
-          ) : null
-        }
+        rightIcon={icon ? <Ionicons name={icon} size={20} color={Colors.White} style={styles.buttonIcon} /> : null}
       />
     </View>
   );

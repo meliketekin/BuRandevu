@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import React from "react";
-import ActivityLoading from "../activity-loading";
+import ActivityLoading from "@/components/high-level/activity-loading";
 
 const CustomImage = ({ children, uri, style, isLocalFile, loading, resizeMode, contentFit }) => {
   if (loading) return <ActivityLoading style={{ flex: 0.655 }} />;

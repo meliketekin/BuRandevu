@@ -1,9 +1,9 @@
 import { Modal, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { modalStore } from "../../../stores/modal-store";
-import ConfirmModal from "../../../modals/confirm-modal";
-import SelectModal from "../../../modals/select-modal";
-import { ModalTypeEnum } from "../../../enums/modal-type-enum";
+import { modalStore } from "@/stores/modal-store";
+import ConfirmModal from "@/modals/confirm-modal";
+import SelectModal from "@/modals/select-modal";
+import { ModalTypeEnum } from "@/enums/modal-type-enum";
 
 /**
  * Kayıtlı modal tipleri. Yeni modal eklemek için modal-type-enum'a ekle,
@@ -38,13 +38,7 @@ export function ModalRenderer() {
   };
 
   return (
-    <Modal
-      visible
-      transparent
-      animationType={animationType}
-      statusBarTranslucent
-      onRequestClose={handleClose}
-    >
+    <Modal visible transparent animationType={animationType} statusBarTranslucent onRequestClose={handleClose}>
       {rawContainer ? (
         <Component {...current.props} onClose={handleClose} />
       ) : (
@@ -68,8 +62,7 @@ export function useModal() {
 }
 
 /** Modal aç: openModal(ModalTypeEnum.ConfirmModal, { ...props }) */
-export const openModal = (type, props) =>
-  modalStore.getState().open(type, props);
+export const openModal = (type, props) => modalStore.getState().open(type, props);
 
 /** Modal kapat */
 export const closeModal = () => modalStore.getState().close();

@@ -26,7 +26,7 @@ export default function Employees() {
     if (!uid) { setLoading(false); return; }
 
     const q = query(
-      collection(db, "users", uid, "employees"),
+      collection(db, "businesses", uid, "employees"),
       orderBy("createdAt", "desc"),
     );
 
@@ -45,7 +45,7 @@ export default function Employees() {
     useCallback(() => {
       const uid = auth.currentUser?.uid;
       if (!uid) return;
-      getDocs(query(collection(db, "users", uid, "employees"), orderBy("createdAt", "desc")))
+      getDocs(query(collection(db, "businesses", uid, "employees"), orderBy("createdAt", "desc")))
         .then((snap) => {
           setEmployees(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
         })

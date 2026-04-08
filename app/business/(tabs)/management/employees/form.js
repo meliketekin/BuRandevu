@@ -260,7 +260,7 @@ export default function EmployeeForm() {
     const uid = auth.currentUser?.uid;
     if (!uid) { setLoadingEmployee(false); return; }
 
-    getDoc(doc(db, "users", uid, "employees", employeeId))
+    getDoc(doc(db, "businesses", uid, "employees", employeeId))
       .then((snap) => {
         if (!snap.exists()) return;
         const data = { id: snap.id, ...snap.data() };
@@ -282,7 +282,7 @@ export default function EmployeeForm() {
     const uid = auth.currentUser?.uid;
     if (!uid) { setLoadingServices(false); return; }
 
-    getDocs(query(collection(db, "users", uid, "services"), orderBy("createdAt", "desc")))
+    getDocs(query(collection(db, "businesses", uid, "services"), orderBy("createdAt", "desc")))
       .then((snap) => {
         setBusinessServices(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
       })
@@ -382,10 +382,10 @@ export default function EmployeeForm() {
       };
 
       if (isEdit) {
-        await updateDoc(doc(db, "users", uid, "employees", employeeId), payload);
+        await updateDoc(doc(db, "businesses", uid, "employees", employeeId), payload);
         CommandBus.sc.alertSuccess("Güncellendi", `${name.trim()} güncellendi.`, 2600);
       } else {
-        await addDoc(collection(db, "users", uid, "employees"), { ...payload, createdAt: serverTimestamp() });
+        await addDoc(collection(db, "businesses", uid, "employees"), { ...payload, createdAt: serverTimestamp() });
         CommandBus.sc.alertSuccess("Kaydedildi", `${name.trim()} eklendi.`, 2600);
       }
       router.back();

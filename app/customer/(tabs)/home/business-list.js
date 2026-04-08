@@ -54,7 +54,7 @@ const BusinessList = () => {
             <CustomTouchableOpacity
               key={item.id}
               activeOpacity={0.96}
-              onPress={() => router.push({ pathname: "/customer/home/business-detail", params: { id: item.id } })}
+              onPress={() => router.push({ pathname: "/customer/business-detail", params: { id: item.id } })}
             >
               <CustomerBusinessCard item={item} />
             </CustomTouchableOpacity>
