@@ -12,9 +12,12 @@ service cloud.firestore {
       allow read, write: if request.auth.uid == uid;
     }
 
-    // Kullanıcının kendi randevuları — sadece kendisi okur/yazar
+    // Kullanıcının kendi randevuları
+    // - Okuma/yazma: müşterinin kendisi
+    // - Güncelleme: randevunun işletme sahibi de güncelleyebilir (onayla/reddet)
     match /users/{uid}/appointments/{appointmentId} {
       allow read, write: if request.auth.uid == uid;
+      allow update: if resource.data.businessId == request.auth.uid;
     }
 
     // İşletme bilgisi — herkes okuyabilir, sadece sahibi yazar

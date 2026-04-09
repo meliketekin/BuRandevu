@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, View, StyleSheet, ScrollView, Pressable } from "react-native";
+import { ActivityIndicator, View, StyleSheet, ScrollView, Pressable, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { collection, doc, getDocs, query, where, writeBatch } from "firebase/firestore";
 import { auth, db } from "@/firebase";
