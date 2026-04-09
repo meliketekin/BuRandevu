@@ -145,7 +145,9 @@ const FormInput = ({
           ]}
           pointerEvents="none"
         >
-          <Animated.Text style={[styles.label, { color: Colors.InputPlaceholderColor, fontSize: fontSizeValue.current, fontFamily }]}>{required ? `${label} *` : label}</Animated.Text>
+          <Animated.Text style={[styles.label, { color: Colors.InputPlaceholderColor, fontSize: fontSizeValue.current, fontFamily }]}>
+            {label}{required ? <Animated.Text style={{ color: Colors.ErrorColor ?? "#EF4444", fontSize: fontSizeValue.current, fontFamily }}> *</Animated.Text> : null}
+          </Animated.Text>
         </Animated.View>
       )}
       <View style={styles.inputContainer}>

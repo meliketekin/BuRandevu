@@ -1,11 +1,13 @@
-import { useMemo, useState } from "react";
-import { View, StyleSheet, ScrollView, Pressable, Modal, useWindowDimensions } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, View, StyleSheet, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { collection, doc, getDocs, query, where, writeBatch } from "firebase/firestore";
+import { auth, db } from "@/firebase";
 import LayoutView from "@/components/high-level/layout-view";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import CustomText from "@/components/high-level/custom-text";
-import CustomImage from "@/components/high-level/custom-image";
+import CustomModal from "@/components/high-level/custom-modal";
 import { Colors } from "@/constants/colors";
 
 const PALETTE = {
@@ -23,60 +25,6 @@ const PALETTE = {
 };
 
 
-const INITIAL_REQUESTS = [
-  {
-    id: "#4829",
-    name: "Selinnur Aksoy",
-    badge: "VIP Müşteri",
-    service: "Saç Kesimi & Keratin Bakım",
-    dateLabel: "14 Ekim, Pazartesi",
-    time: "14:30",
-    expert: "Mert Yılmaz",
-    amount: "450 ₺",
-    starred: true,
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAH_PiNIyqs-7mZkOtsWMnONpYGU1zMVECkCXfg3RghkK5By8CGNmSu0xQoctLYAfVEHIu8_ABKPySX_l9V7BoRti-eH0XEMRBwxK62awS2ImxfY1i9iatqpjPFwgW110YFECYiBp2Rva3jHR_XL6sUpkJMRYRKQRgPCc8m_EEpt1ws3dw2JKbveVZ9bmw37vivABcTn4NOP2CNLcFRP8s_P4v6h3hpZA43GH1KQLJENgKtNwA2ZbM5Xys4jjx7D81E6CeHMRWcoWg",
-  },
-  {
-    id: "#4831",
-    name: "Burak Tanyeli",
-    badge: "Yeni Müşteri",
-    service: "Sakal Tasarımı & Bakım",
-    dateLabel: "15 Ekim, Salı",
-    time: "11:00",
-    expert: "Arda Güler",
-    amount: "320 ₺",
-    starred: false,
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCHbHassn7W0CH4G9n6EiePey-4h00mdLRgIAWmYG-1OI0lyxWqlbsqH5Wor0RHYYW2p2u-3aCSO2cRO4WTv-sFvicWWkhpbdGaZI7Bl6cogBqRJANCQTHKJfruXd4EQEELUOYO7K6hEBDk6mCN88Os4vaybbJtSVZjGPLDY6po1RNuy8ndkAA77qo_FFhorpt8wU-wsELclHqNCtJrDBRx8kIcuDW78Co81D2XMdR7QxDGX3AlVXPAMx8eQYKGMfjeR0gGgmeo26k",
-  },
-  {
-    id: "#4835",
-    name: "Derya Can",
-    badge: "Sadık Müşteri",
-    service: "Boya & Fön",
-    dateLabel: "15 Ekim, Salı",
-    time: "16:00",
-    expert: "Mert Yılmaz",
-    amount: "780 ₺",
-    starred: false,
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAA3oMdi4mRqXkVNnxQbGArWCoabTrgthRSHYJ6LxiOpFsS5O9uaDmzLgeYlVmc4D6Hz4IeeS4FwEgwsu6qYtJLg-4qqaKBZmfK2EQuu-VwP9xpZ4crXU-j1bR7JEJu-9yBfznOrRnkDIyGERY9ilNvoMOmSyZWamDuitUzzO0u-MN4NMqU5Ti7ymGMWGQhTb-Xoh4vTW_IsJe9eh93840yFf12kvicLXtxCYw7widLXLfWPqCTJhaIZv1Al_8h0bTonZPuHBbD6bY",
-  },
-  {
-    id: "#4839",
-    name: "Caner Yıldız",
-    badge: "Yeni Müşteri",
-    service: "Komple Bakım Paketi",
-    dateLabel: "16 Ekim, Çarşamba",
-    time: "09:30",
-    expert: "Arda Güler",
-    amount: "950 ₺",
-    starred: false,
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBkuQetcXqOHqfics61K2sZCiQXoBcwzKYVDnhpoovp4923KznRERVNhPmZcn50R0pQ1nkwrt3VRcNqqJob3TjZX1MtRyrUnkfbbY4JChwVwZIXdFJv-hBJaJRojCMM7HzN7CboApbtxwtPYdYy8_hAQSo0Mz2ntuEz_pSepdGI-sA9pVH7ED89px9byPOSeeaWT0bQGzFMgLybEFnAQOfcy9aHYPF5U9jfjBlGmVidtmQ6qj7cex1Et-g8CJ3MGEAG_tjV7t-H7hU",
-  },
-];
 
 function InfoRow({ icon, label, value }) {
   return (
@@ -98,30 +46,66 @@ function InfoRow({ icon, label, value }) {
 
 export default function Requests() {
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
-  const [requests, setRequests] = useState(INITIAL_REQUESTS);
+  const { width } = useWindowDimensions();
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [resolving, setResolving] = useState(null); // appointmentId being resolved
   const [archivedCount, setArchivedCount] = useState(0);
   const [selectedRequest, setSelectedRequest] = useState(null);
 
   const isWide = width >= 768;
 
-  const pendingCount = requests.length;
-  const subtitle = useMemo(() => {
-    if (!pendingCount) {
-      return "Şu anda onay bekleyen yeni randevu talebiniz bulunmuyor.";
-    }
-    return `Onay bekleyen ${pendingCount} yeni randevu talebiniz bulunmaktadır.`;
-  }, [pendingCount]);
+  useEffect(() => {
+    const businessId = auth.currentUser?.uid;
+    if (!businessId) { setLoading(false); return; }
 
-  const handleResolve = (requestId) => {
-    setRequests((current) => {
-      const exists = current.some((item) => item.id === requestId);
-      if (!exists) return current;
-      setArchivedCount((value) => value + 1);
-      return current.filter((item) => item.id !== requestId);
-    });
-    setSelectedRequest((current) => (current?.id === requestId ? null : current));
+    const q = query(
+      collection(db, "businesses", businessId, "appointments"),
+      where("status", "==", "pending")
+    );
+    getDocs(q)
+      .then((snap) => {
+        const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        setRequests(items);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const pendingCount = requests.length;
+
+  const handleResolve = async (requestId, newStatus) => {
+    const businessId = auth.currentUser?.uid;
+    if (!businessId) return;
+
+    const request = requests.find((r) => r.id === requestId);
+    if (!request) return;
+
+    setResolving(requestId);
+    try {
+      const batch = writeBatch(db);
+      const businessRef = doc(db, "businesses", businessId, "appointments", requestId);
+      const userRef = doc(db, "users", request.customerId, "appointments", requestId);
+      batch.update(businessRef, { status: newStatus });
+      batch.update(userRef, { status: newStatus });
+      await batch.commit();
+
+      setRequests((current) => current.filter((item) => item.id !== requestId));
+      setArchivedCount((v) => v + 1);
+      setSelectedRequest((current) => (current?.id === requestId ? null : current));
+    } catch (e) {
+      console.error("Randevu güncellenemedi:", e);
+    } finally {
+      setResolving(null);
+    }
   };
+
+  if (loading) {
+    return (
+      <LayoutView isActiveHeader={true} title="Talepler" backgroundColor={PALETTE.bg} paddingHorizontal={0}>
+        <ActivityIndicator size="large" color={Colors.Gold} style={{ marginTop: 80 }} />
+      </LayoutView>
+    );
+  }
 
   return (
     <LayoutView isActiveHeader={true} title="Talepler" backgroundColor={PALETTE.bg} paddingHorizontal={0}>
@@ -140,57 +124,58 @@ export default function Requests() {
           </View>
         ) : (
           <View style={[styles.grid, isWide && styles.gridWide]}>
-            {requests.map((request) => (
-              <View key={request.id} style={[styles.requestCard, isWide && styles.requestCardWide]}>
-                <Pressable style={({ pressed }) => [styles.cardContentButton, pressed && styles.pressed]} onPress={() => setSelectedRequest(request)}>
-                  <View style={styles.cardTopRow}>
-                    <View style={styles.customerWrap}>
-                      <View style={styles.customerImageWrap}>
-                        <CustomImage uri={request.image} style={styles.customerImage} contentFit="cover" />
-                        {request.starred ? (
-                          <View style={styles.starBadge}>
-                            <Ionicons name="star" size={13} color={PALETTE.onTertiaryContainer} />
-                          </View>
-                        ) : null}
+            {requests.map((request) => {
+              const serviceLabel = request.serviceNames?.join(" & ") ?? "—";
+              const dateLabel = request.date ? new Date(request.date).toLocaleDateString("tr-TR", { day: "numeric", month: "long", weekday: "long" }) : "—";
+              const isResolvingThis = resolving === request.id;
+              return (
+                <View key={request.id} style={[styles.requestCard, isWide && styles.requestCardWide]}>
+                  <Pressable style={({ pressed }) => [styles.cardContentButton, pressed && styles.pressed]} onPress={() => setSelectedRequest(request)}>
+                    <View style={styles.cardTopRow}>
+                      <View style={styles.customerWrap}>
+                        <View style={styles.customerText}>
+                          <CustomText bold lg color={Colors.BrandPrimary}>
+                            {request.customerId?.slice(0, 8) ?? "Müşteri"}
+                          </CustomText>
+                          <CustomText min color="rgba(68,71,72,0.75)" style={styles.customerBadge}>
+                            Yeni Müşteri
+                          </CustomText>
+                        </View>
                       </View>
 
-                      <View style={styles.customerText}>
-                        <CustomText bold lg color={Colors.BrandPrimary}>
-                          {request.name}
-                        </CustomText>
-                        <CustomText min color="rgba(68,71,72,0.75)" style={styles.customerBadge}>
-                          {request.badge}
+                      <View style={styles.requestIdBadge}>
+                        <CustomText min bold color={Colors.LightGray2}>
+                          #{request.id.slice(0, 6).toUpperCase()}
                         </CustomText>
                       </View>
                     </View>
 
-                    <View style={styles.requestIdBadge}>
-                      <CustomText min bold color={Colors.LightGray2}>
-                        {request.id}
+                    <View style={styles.cardBody}>
+                      <InfoRow icon="cut-outline" label="HİZMET" value={serviceLabel} />
+                      <InfoRow icon="calendar-outline" label="TARİH & SAAT" value={`${dateLabel} — ${request.time}`} />
+                    </View>
+                  </Pressable>
+
+                  <View style={styles.cardActions}>
+                    <Pressable
+                      style={({ pressed }) => [styles.approveButton, pressed && styles.pressed, isResolvingThis && { opacity: 0.6 }]}
+                      onPress={() => !isResolvingThis && handleResolve(request.id, "approved")}
+                    >
+                      <CustomText xs bold color={Colors.White} style={styles.actionText}>
+                        Onayla
                       </CustomText>
-                    </View>
+                    </Pressable>
+
+                    <Pressable
+                      style={({ pressed }) => [styles.rejectButton, pressed && styles.pressed, isResolvingThis && { opacity: 0.6 }]}
+                      onPress={() => !isResolvingThis && handleResolve(request.id, "rejected")}
+                    >
+                      <Ionicons name="close" size={20} color={Colors.LightGray2} />
+                    </Pressable>
                   </View>
-
-                  <View style={styles.cardBody}>
-                    <InfoRow icon="cut-outline" label="HİZMET" value={request.service} />
-                    <InfoRow icon="calendar-outline" label="TARİH & SAAT" value={`${request.dateLabel} — ${request.time}`} />
-                    <InfoRow icon="person-outline" label="UZMAN" value={request.expert} />
-                  </View>
-                </Pressable>
-
-                <View style={styles.cardActions}>
-                  <Pressable style={({ pressed }) => [styles.approveButton, pressed && styles.pressed]} onPress={() => handleResolve(request.id)}>
-                    <CustomText xs bold color={Colors.White} style={styles.actionText}>
-                      Onayla
-                    </CustomText>
-                  </Pressable>
-
-                  <Pressable style={({ pressed }) => [styles.rejectButton, pressed && styles.pressed]} onPress={() => handleResolve(request.id)}>
-                    <Ionicons name="close" size={20} color={Colors.LightGray2} />
-                  </Pressable>
                 </View>
-              </View>
-            ))}
+              );
+            })}
           </View>
         )}
 
@@ -218,99 +203,65 @@ export default function Requests() {
         </View>
       </ScrollView>
 
-      <Modal visible={!!selectedRequest} transparent animationType="slide" statusBarTranslucent onRequestClose={() => setSelectedRequest(null)}>
-        <View style={styles.modalRoot}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setSelectedRequest(null)} />
-
-          <View
-            style={[
-              styles.detailSheet,
-              {
-                maxHeight: height * 0.82,
-                paddingBottom: Math.max(insets.bottom, 18) + 10,
-              },
-            ]}
-          >
-            <View style={styles.sheetHandle} />
-
-            <View style={styles.detailHeader}>
-              <View style={styles.detailHeaderText}>
-                <CustomText extraBold fontSize={30} color={Colors.BrandPrimary} style={styles.detailTitle}>
-                  Talep Detayları
+      <CustomModal
+        visible={!!selectedRequest}
+        onClose={() => setSelectedRequest(null)}
+        title="Talep Detayları"
+      >
+        {selectedRequest && (
+          <View style={styles.modalContent}>
+            <View style={styles.detailCard}>
+              <View style={styles.detailRow}>
+                <CustomText min bold color={Colors.LightGray2} style={styles.detailLabel}>
+                  MÜŞTERİ ID
                 </CustomText>
-                <CustomText sm color={Colors.LightGray2} style={styles.detailSubtitle}>
-                  Randevu talebini buradan yönetebilirsiniz.
+                <CustomText sm semibold color={Colors.BrandPrimary}>
+                  {selectedRequest.customerId?.slice(0, 12) ?? "—"}
                 </CustomText>
               </View>
 
-              <Pressable style={({ pressed }) => [styles.detailCloseButton, pressed && styles.pressed]} onPress={() => setSelectedRequest(null)}>
-                <Ionicons name="close" size={22} color={Colors.LightGray2} />
-              </Pressable>
+              <View style={styles.detailRow}>
+                <CustomText min bold color={Colors.LightGray2} style={styles.detailLabel}>
+                  HİZMET
+                </CustomText>
+                <CustomText sm semibold color={Colors.BrandPrimary} style={styles.detailValueRight}>
+                  {selectedRequest.serviceNames?.join(" & ") ?? "—"}
+                </CustomText>
+              </View>
+
+              <View style={[styles.detailRow, styles.detailRowLast]}>
+                <CustomText min bold color={Colors.LightGray2} style={styles.detailLabel}>
+                  TARİH & SAAT
+                </CustomText>
+                <View style={styles.detailDateWrap}>
+                  <Ionicons name="calendar-outline" size={16} color={Colors.Gold} />
+                  <CustomText sm semibold color={Colors.BrandPrimary}>
+                    {selectedRequest.date}, {selectedRequest.time}
+                  </CustomText>
+                </View>
+              </View>
             </View>
 
-            {selectedRequest ? (
-              <>
-                <View style={styles.detailCard}>
-                  <View style={styles.detailRow}>
-                    <CustomText min bold color={Colors.LightGray2} style={styles.detailLabel}>
-                      MÜŞTERİ
-                    </CustomText>
-                    <CustomText lg bold color={Colors.BrandPrimary}>
-                      {selectedRequest.name}
-                    </CustomText>
-                  </View>
+            <View style={styles.detailActions}>
+              <Pressable
+                style={({ pressed }) => [styles.modalApproveButton, pressed && styles.pressed, resolving === selectedRequest.id && { opacity: 0.6 }]}
+                onPress={() => resolving !== selectedRequest.id && handleResolve(selectedRequest.id, "approved")}
+              >
+                <Ionicons name="checkmark-circle" size={22} color={Colors.White} />
+                <CustomText bold lg color={Colors.White}>Onayla</CustomText>
+              </Pressable>
 
-                  <View style={styles.detailRow}>
-                    <CustomText min bold color={Colors.LightGray2} style={styles.detailLabel}>
-                      HİZMET
-                    </CustomText>
-                    <CustomText sm semibold color={Colors.BrandPrimary} style={styles.detailValueRight}>
-                      {selectedRequest.service}
-                    </CustomText>
-                  </View>
-
-                  <View style={styles.detailRow}>
-                    <CustomText min bold color={Colors.LightGray2} style={styles.detailLabel}>
-                      TARİH & SAAT
-                    </CustomText>
-                    <View style={styles.detailDateWrap}>
-                      <Ionicons name="calendar-outline" size={18} color={Colors.Gold} />
-                      <CustomText sm semibold color={Colors.BrandPrimary}>
-                        {selectedRequest.dateLabel}, {selectedRequest.time}
-                      </CustomText>
-                    </View>
-                  </View>
-
-                  <View style={[styles.detailRow, styles.detailRowLast]}>
-                    <CustomText min bold color={Colors.LightGray2} style={styles.detailLabel}>
-                      TUTAR
-                    </CustomText>
-                    <CustomText header bold color={Colors.BrandPrimary}>
-                      {selectedRequest.amount}
-                    </CustomText>
-                  </View>
-                </View>
-
-                <View style={styles.detailActions}>
-                  <Pressable style={({ pressed }) => [styles.modalApproveButton, pressed && styles.pressed]} onPress={() => handleResolve(selectedRequest.id)}>
-                    <Ionicons name="checkmark-circle" size={22} color={Colors.White} />
-                    <CustomText bold lg color={Colors.White}>
-                      Onayla
-                    </CustomText>
-                  </Pressable>
-
-                  <Pressable style={({ pressed }) => [styles.modalRejectButton, pressed && styles.pressed]} onPress={() => handleResolve(selectedRequest.id)}>
-                    <Ionicons name="close-circle" size={22} color={Colors.BrandPrimary} />
-                    <CustomText bold lg color={Colors.BrandPrimary}>
-                      Reddet
-                    </CustomText>
-                  </Pressable>
-                </View>
-              </>
-            ) : null}
+              <Pressable
+                style={({ pressed }) => [styles.modalRejectButton, pressed && styles.pressed, resolving === selectedRequest.id && { opacity: 0.6 }]}
+                onPress={() => resolving !== selectedRequest.id && handleResolve(selectedRequest.id, "rejected")}
+              >
+                <Ionicons name="close-circle" size={22} color={Colors.BrandPrimary} />
+                <CustomText bold lg color={Colors.BrandPrimary}>Reddet</CustomText>
+              </Pressable>
+            </View>
           </View>
-        </View>
-      </Modal>
+        )}
+      </CustomModal>
     </LayoutView>
   );
 }
@@ -584,59 +535,9 @@ const styles = StyleSheet.create({
   archiveHint: {
     lineHeight: 18,
   },
-  modalRoot: {
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-  modalBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(20,20,20,0.6)",
-  },
-  detailSheet: {
-    width: "100%",
-    backgroundColor: PALETTE.surface,
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    paddingHorizontal: 24,
-    paddingTop: 8,
-    shadowColor: Colors.Black,
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.16,
-    shadowRadius: 20,
-    elevation: 12,
-  },
-  sheetHandle: {
-    width: 48,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#E5E5E5",
-    alignSelf: "center",
-    marginBottom: 24,
-  },
-  detailHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: 12,
-    marginBottom: 24,
-  },
-  detailHeaderText: {
-    flex: 1,
-  },
-  detailTitle: {
-    letterSpacing: -0.9,
-    marginBottom: 4,
-  },
-  detailSubtitle: {
-    lineHeight: 20,
-  },
-  detailCloseButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: PALETTE.surfaceLow,
+  modalContent: {
+    paddingHorizontal: 22,
+    paddingBottom: 4,
   },
   detailCard: {
     backgroundColor: PALETTE.surfaceLow,
