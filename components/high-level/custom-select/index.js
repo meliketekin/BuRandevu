@@ -142,7 +142,6 @@ const styles = StyleSheet.create({
     width: "100%",
     alignSelf: "center",
     borderWidth: 1,
-    zIndex: -1,
   },
   labelContainer: {
     position: "absolute",

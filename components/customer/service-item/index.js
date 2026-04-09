@@ -5,7 +5,7 @@ import CustomText from "@/components/high-level/custom-text";
 import CustomTouchableOpacity from "@/components/high-level/custom-touchable-opacity";
 import { Colors } from "@/constants/colors";
 
-const CustomerServiceItem = ({ item, isLast }) => {
+const CustomerServiceItem = ({ item, isLast, selected = false, onToggle }) => {
   return (
     <View style={[styles.container, !isLast && styles.withBorder]}>
       <View style={styles.content}>
@@ -28,8 +28,12 @@ const CustomerServiceItem = ({ item, isLast }) => {
         <CustomText bold md color={Colors.BrandPrimary}>
           {item.price}
         </CustomText>
-        <CustomTouchableOpacity style={styles.addButton} activeOpacity={0.85}>
-          <Ionicons name="add" size={18} color={Colors.BrandPrimary} />
+        <CustomTouchableOpacity
+          style={[styles.addButton, selected && styles.addButtonSelected]}
+          activeOpacity={0.8}
+          onPress={onToggle}
+        >
+          <Ionicons name={selected ? "checkmark" : "add"} size={18} color={selected ? Colors.White : Colors.BrandPrimary} />
         </CustomTouchableOpacity>
       </View>
     </View>
@@ -71,11 +75,15 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: "#E5E7EB",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: Colors.White,
+  },
+  addButtonSelected: {
+    backgroundColor: Colors.BrandPrimary,
+    borderColor: Colors.BrandPrimary,
   },
 });
 

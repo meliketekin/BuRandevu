@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import ActivityLoading from "@/components/high-level/activity-loading";
 import CustomText from "@/components/high-level/custom-text";
+import CustomImage from "@/components/high-level/custom-image";
 
 const normalizeItem = (item, labelKey, valueKey) => {
   if (typeof item === "string") return { label: item, value: item };
@@ -46,6 +47,10 @@ const SelectModal = ({
   isClearable = false,
   onClear,
   onClose,
+  /** Örn: ["duration", "price"] — _raw üzerinden alınan ek alanlar item altında küçük metin olarak gösterilir */
+  metaKeys,
+  /** _raw üzerindeki URL alanı adı. Varsa her satırda küçük yuvarlak avatar gösterilir */
+  avatarKey,
 }) => {
   const insets = useSafeAreaInsets();
 
@@ -130,19 +135,43 @@ const SelectModal = ({
     ({ item, index }) => {
       const isSelected = item.value === selectedValue || item.label === selectedValue;
       const isLast = index === displayData.length - 1;
+      const metaValues = metaKeys?.map((key) => item._raw?.[key]).filter(Boolean) ?? [];
+      const avatarUrl = avatarKey ? item._raw?.[avatarKey] : null;
       return (
         <Pressable
           style={({ pressed }) => [styles.item, !isLast && styles.itemBorder, pressed && styles.pressed]}
           onPress={() => handleSelect(item)}
         >
-          <CustomText bold fontSize={14} color={isSelected ? Colors.Gold : Colors.BrandPrimary} style={styles.itemText}>
-            {item.label}
-          </CustomText>
+          {avatarKey && (
+            <View style={styles.avatarWrap}>
+              {avatarUrl ? (
+                <CustomImage uri={avatarUrl} style={styles.avatar} contentFit="cover" />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <Ionicons name="person-outline" size={16} color="#C0C0C0" />
+                </View>
+              )}
+            </View>
+          )}
+          <View style={styles.itemContent}>
+            <CustomText bold fontSize={14} color={isSelected ? Colors.Gold : Colors.BrandPrimary}>
+              {item.label}
+            </CustomText>
+            {metaValues.length > 0 && (
+              <View style={styles.metaRow}>
+                {metaValues.map((val, i) => (
+                  <CustomText key={i} fontSize={12} color={Colors.LightGray2}>
+                    {val}
+                  </CustomText>
+                ))}
+              </View>
+            )}
+          </View>
           {isSelected && <Ionicons name="checkmark" size={18} color={Colors.Gold} />}
         </Pressable>
       );
     },
-    [selectedValue, displayData.length, handleSelect],
+    [selectedValue, displayData.length, handleSelect, metaKeys, avatarKey],
   );
 
   return (
@@ -268,15 +297,36 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 16,
+    paddingVertical: 12,
     paddingHorizontal: 20,
+  },
+  avatarWrap: {
+    marginRight: 12,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  avatarPlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#F1F1F1",
+    alignItems: "center",
+    justifyContent: "center",
   },
   itemBorder: {
     borderBottomWidth: 1,
     borderBottomColor: "rgba(20,20,20,0.05)",
   },
-  itemText: {
+  itemContent: {
     flex: 1,
+    gap: 4,
+  },
+  metaRow: {
+    flexDirection: "row",
+    gap: 10,
   },
   pressed: {
     opacity: 0.7,

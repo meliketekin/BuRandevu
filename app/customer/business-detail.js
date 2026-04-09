@@ -88,7 +88,14 @@ const BusinessDetail = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [lightbox, setLightbox] = useState({ visible: false, images: [], index: 0 });
+  const [selectedServiceIds, setSelectedServiceIds] = useState([]);
   const lightboxRef = useRef(null);
+
+  const toggleService = (serviceId) => {
+    setSelectedServiceIds((prev) =>
+      prev.includes(serviceId) ? prev.filter((id) => id !== serviceId) : [...prev, serviceId],
+    );
+  };
 
   useEffect(() => {
     if (!businessId) return;
@@ -179,7 +186,6 @@ const BusinessDetail = () => {
   const businessStatus = getBusinessStatus(business?.workingHours);
   const hasVenue = venuePhotos.length > 0;
   const hasOperation = operationPhotos.length > 0;
-  const firstService = services[0] ?? null;
 
   if (loading) {
     return (
@@ -411,32 +417,46 @@ const BusinessDetail = () => {
 
         {services.length > 0 && (
           <View style={styles.sectionCard}>
-            <CustomText bold lg color={Colors.BrandPrimary} style={styles.servicesTitle}>
-              Hizmetler
-            </CustomText>
+            <View style={styles.sectionHeader}>
+              <CustomText bold lg color={Colors.BrandPrimary}>
+                Hizmetler
+              </CustomText>
+              {selectedServiceIds.length > 0 && (
+                <CustomText sm color={Colors.BrandGold} semibold>
+                  {selectedServiceIds.length} seçildi
+                </CustomText>
+              )}
+            </View>
 
             <View>
               {services.map((service, index) => (
-                <CustomerServiceItem key={service.id} item={service} isLast={index === services.length - 1} />
+                <CustomerServiceItem
+                  key={service.id}
+                  item={service}
+                  isLast={index === services.length - 1}
+                  selected={selectedServiceIds.includes(service.id)}
+                  onToggle={() => toggleService(service.id)}
+                />
               ))}
             </View>
           </View>
         )}
       </ScrollView>
 
-      {firstService && (
+      {services.length > 0 && (
         <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
           <CustomButton
-            title="Randevu Al"
+            title={selectedServiceIds.length > 0 ? `Randevu Al (${selectedServiceIds.length} hizmet)` : "Randevu Al"}
             onPress={() =>
               router.push({
                 pathname: "/customer/create-appointment",
                 params: {
                   id: businessId,
-                  serviceId: firstService.id,
+                  serviceIds: JSON.stringify(selectedServiceIds),
                 },
               })
             }
+            disabled={selectedServiceIds.length === 0}
             marginTop={0}
             height={56}
             borderRadius={14}
