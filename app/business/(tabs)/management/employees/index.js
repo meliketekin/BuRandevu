@@ -12,9 +12,7 @@ import { Colors } from "@/constants/colors";
 
 function getEmployeeTodayStatus(emp) {
   const today = emp.workingHours?.[String(new Date().getDay())];
-  return today?.enabled
-    ? { dotColor: Colors.Green, detail: "Bugün mesaide" }
-    : { dotColor: Colors.ErrorColor, detail: "Bugün izinli" };
+  return today?.enabled ? { dotColor: Colors.Green, detail: "Bugün mesaide" } : { dotColor: Colors.ErrorColor, detail: "Bugün izinli" };
 }
 
 export default function Employees() {
@@ -23,20 +21,24 @@ export default function Employees() {
 
   useEffect(() => {
     const uid = auth.currentUser?.uid;
-    if (!uid) { setLoading(false); return; }
+    if (!uid) {
+      setLoading(false);
+      return;
+    }
 
-    const q = query(
-      collection(db, "businesses", uid, "employees"),
-      orderBy("createdAt", "desc"),
+    const q = query(collection(db, "businesses", uid, "employees"), orderBy("createdAt", "desc"));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snap) => {
+        setEmployees(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+        setLoading(false);
+      },
+      (err) => {
+        console.error("Employees snapshot error:", err);
+        setLoading(false);
+      },
     );
-
-    const unsubscribe = onSnapshot(q, (snap) => {
-      setEmployees(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-      setLoading(false);
-    }, (err) => {
-      console.error("Employees snapshot error:", err);
-      setLoading(false);
-    });
 
     return unsubscribe;
   }, []);
@@ -54,18 +56,8 @@ export default function Employees() {
   );
 
   return (
-    <LayoutView
-      showBackButton
-      title="Ekibim"
-      backgroundColor={Colors.BrandBackground}
-      paddingHorizontal={0}
-      onAddPress={() => router.push("/business/management/employees/form")}
-    >
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+    <LayoutView showBackButton title="Ekibim" backgroundColor={Colors.BrandBackground} paddingHorizontal={0} onAddPress={() => router.push("/business/management/employees/employee-form")}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {loading ? (
           <ActivityLoading style={styles.loader} />
         ) : employees.length === 0 ? (
@@ -73,7 +65,9 @@ export default function Employees() {
             <View style={styles.emptyIconWrap}>
               <Ionicons name="people-outline" size={28} color={Colors.LightGray2} />
             </View>
-            <CustomText bold fontSize={15} color={Colors.BrandPrimary}>Henüz çalışan yok</CustomText>
+            <CustomText bold fontSize={15} color={Colors.BrandPrimary}>
+              Henüz çalışan yok
+            </CustomText>
             <CustomText medium fontSize={13} color={Colors.LightGray2} style={styles.emptyDescription}>
               Sağ üstteki + butonuna basarak ilk çalışanını ekle.
             </CustomText>

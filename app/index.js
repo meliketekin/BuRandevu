@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View, Pressable, StyleSheet, ImageBackground, ActivityIndicator } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Shadow } from "react-native-shadow-2";
@@ -20,13 +20,23 @@ export default function Onboarding() {
   const [checking, setChecking] = useState(true);
   const setAuth = useAuthStore((s) => s.setAuth);
   const insets = useSafeAreaInsets();
+  // Yalnızca ilk auth kontrolünde çalışır; login/register ekranları kendi
+  // navigasyonlarını yönetir — böylece çifte yönlendirme olmaz.
+  const initialCheckDone = useRef(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (initialCheckDone.current) return;
+      initialCheckDone.current = true;
+
       if (firebaseUser) {
         try {
           const snap = await getDoc(doc(db, "users", firebaseUser.uid));
-          const data = snap.exists() ? snap.data() : {};
+          if (!snap.exists()) {
+            setChecking(false);
+            return;
+          }
+          const data = snap.data();
           const userType = data.userType ?? "customer";
           const isAdmin = data.isAdmin ?? false;
           const isBusinessInfoCompleted = data.isBusinessInfoCompleted ?? false;
@@ -56,13 +66,8 @@ export default function Onboarding() {
 
   return (
     <ImageBackground source={BG_IMAGE} style={styles.root} resizeMode="cover">
-
       {/* Aşağıdan texte kadar smooth gradient */}
-      <LinearGradient
-        colors={["transparent", "rgba(0,0,0,0.55)", "rgba(0,0,0,0.88)", "rgba(0,0,0,0.97)"]}
-        locations={[0, 0.38, 0.65, 1]}
-        style={styles.bottomGradient}
-      />
+      <LinearGradient colors={["transparent", "rgba(0,0,0,0.55)", "rgba(0,0,0,0.88)", "rgba(0,0,0,0.97)"]} locations={[0, 0.38, 0.65, 1]} style={styles.bottomGradient} />
 
       {/* Content */}
       <View style={[styles.content, { paddingBottom: insets.bottom + 48, paddingTop: insets.top }]}>
@@ -82,17 +87,8 @@ export default function Onboarding() {
         {/* Actions */}
         <View style={styles.actions}>
           {/* Primary: Hesap Oluştur */}
-          <Shadow
-            distance={22}
-            startColor="#CCA83055"
-            endColor="#CCA83000"
-            offset={[0, 8]}
-            style={styles.shadowContainer}
-          >
-            <Pressable
-              style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
-              onPress={() => router.push("/auth/register")}
-            >
+          <Shadow distance={22} startColor="#CCA83055" endColor="#CCA83000" offset={[0, 8]} style={styles.shadowContainer}>
+            <Pressable style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]} onPress={() => router.push("/auth/register")}>
               <CustomText bold style={styles.primaryButtonText}>
                 Hesap Oluştur
               </CustomText>
@@ -101,10 +97,7 @@ export default function Onboarding() {
           </Shadow>
 
           {/* Secondary: Giriş Yap */}
-          <Pressable
-            style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
-            onPress={() => router.push("/auth/login")}
-          >
+          <Pressable style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]} onPress={() => router.push("/auth/login")}>
             <CustomText bold style={styles.secondaryButtonText}>
               Giriş Yap
             </CustomText>
@@ -112,18 +105,12 @@ export default function Onboarding() {
 
           {/* Tertiary: Misafir */}
           <View style={styles.guestRow}>
-            <Pressable
-              style={({ pressed }) => [styles.guestButton, pressed && { opacity: 1 }]}
-              onPress={() => router.replace("/customer")}
-            >
-              <CustomText style={styles.guestText}>
-                Misafir Olarak Devam Et
-              </CustomText>
+            <Pressable style={({ pressed }) => [styles.guestButton, pressed && { opacity: 1 }]} onPress={() => router.replace("/customer")}>
+              <CustomText style={styles.guestText}>Misafir Olarak Devam Et</CustomText>
               <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.5)" />
             </Pressable>
           </View>
         </View>
-
       </View>
     </ImageBackground>
   );

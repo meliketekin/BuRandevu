@@ -3,7 +3,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { collection, doc, getDoc, getDocs, serverTimestamp, writeBatch } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, where } from "firebase/firestore";
 import { auth, db } from "@/firebase";
 import useAuthStore from "@/store/auth-store";
 import LayoutView from "@/components/high-level/layout-view";
@@ -112,7 +112,7 @@ const CreateAppointment = () => {
       getDocs(collection(db, "businesses", businessId, "services")),
       getDocs(collection(db, "businesses", businessId, "employees")),
       getDoc(doc(db, "businesses", businessId)),
-      getDocs(collection(db, "businesses", businessId, "appointments")),
+      getDocs(query(collection(db, "appointments"), where("businessId", "==", businessId))),
     ])
       .then(([servicesSnap, employeesSnap, businessSnap, appointmentsSnap]) => {
         const fetchedServices = servicesSnap.docs
@@ -135,7 +135,7 @@ const CreateAppointment = () => {
           return {
             id: d.id,
             name: data.name,
-            serviceIds: (data.services ?? []).map((s) => s.id),
+            serviceIds: (data.services ?? []).map((s) => (typeof s === "string" ? s : s.id)),
             photoUrl: data.photoUrl ?? null,
             workingHours: data.workingHours ?? {},
           };
@@ -267,8 +267,7 @@ const CreateAppointment = () => {
     try {
       const dateStr = selectedDate.dateStr;
 
-      const appointmentRef = doc(collection(db, "businesses", businessId, "appointments"));
-      const userAppointmentRef = doc(db, "users", customerId, "appointments", appointmentRef.id);
+      const appointmentRef = doc(collection(db, "appointments"));
 
       const appointmentData = {
         businessId,
@@ -291,10 +290,7 @@ const CreateAppointment = () => {
         ),
       };
 
-      const batch = writeBatch(db);
-      batch.set(appointmentRef, appointmentData);
-      batch.set(userAppointmentRef, appointmentData);
-      await batch.commit();
+      await setDoc(appointmentRef, appointmentData);
 
       CommandBus.sc.alertSuccess(
         "Randevu Oluşturuldu",

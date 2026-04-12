@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { deleteDoc, doc, onSnapshot } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDocs, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/firebase";
 import CustomImage from "@/components/high-level/custom-image";
 import CustomText from "@/components/high-level/custom-text";
@@ -27,6 +27,7 @@ export default function EmployeeDetail() {
   const employeeId = Array.isArray(id) ? id[0] : id;
 
   const [employee, setEmployee] = useState(null);
+  const [businessServices, setBusinessServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
 
@@ -36,6 +37,11 @@ export default function EmployeeDetail() {
       setLoading(false);
       return;
     }
+
+    // İşletme hizmetlerini yükle — çalışanın service ID'lerini isimle göstermek için
+    getDocs(collection(db, "businesses", uid, "services"))
+      .then((snap) => setBusinessServices(snap.docs.map((d) => ({ id: d.id, ...d.data() }))))
+      .catch((err) => console.error("Services load error:", err));
 
     setLoading(true);
     const unsub = onSnapshot(
@@ -53,6 +59,18 @@ export default function EmployeeDetail() {
     return unsub;
   }, [employeeId]);
 
+  // Çalışanın services alanı artık string ID array. Tam objeye dönüştür.
+  // Eski format (object array) için de backward-compat sağlanır.
+  const employeeServices = useMemo(() => {
+    const stored = employee?.services ?? [];
+    return stored
+      .map((s) => {
+        const id = typeof s === "string" ? s : s.id;
+        return businessServices.find((svc) => svc.id === id) ?? null;
+      })
+      .filter(Boolean);
+  }, [employee, businessServices]);
+
   const handleDelete = useCallback(() => {
     openModal(ModalTypeEnum.ConfirmModal, {
       title: "Çalışanı sil",
@@ -66,8 +84,8 @@ export default function EmployeeDetail() {
         setDeleting(true);
         try {
           await deleteDoc(doc(db, "businesses", uid, "employees", employeeId));
-          CommandBus.sc.alertSuccess("Silindi", `${employee?.name ?? "Çalışan"} silindi.`, 2400);
           router.back();
+          CommandBus.sc.alertSuccess("Silindi", `${employee?.name ?? "Çalışan"} silindi.`, 2400);
         } catch (err) {
           console.error("Employee delete error:", err);
           CommandBus.sc.alertError("Hata", "Çalışan silinirken bir sorun oluştu.", 3200);
@@ -158,16 +176,16 @@ export default function EmployeeDetail() {
         </View>
 
         {/* Atanan hizmetler */}
-        {employee.services?.length > 0 && (
+        {employeeServices.length > 0 && (
           <View style={styles.section}>
             <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={1.8} style={styles.sectionLabel}>
               ATANAN HİZMETLER
             </CustomText>
             <View style={styles.sectionCard}>
-              {employee.services.map((svc, index) => (
+              {employeeServices.map((svc, index) => (
                 <View
                   key={svc.id}
-                  style={[styles.serviceRow, index < employee.services.length - 1 && styles.rowDivider]}
+                  style={[styles.serviceRow, index < employeeServices.length - 1 && styles.rowDivider]}
                 >
                   <View style={styles.serviceIconWrap}>
                     <Ionicons name="cut-outline" size={18} color={Colors.Gold} />

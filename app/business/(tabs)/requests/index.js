@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, View, StyleSheet, ScrollView, Pressable, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { collection, doc, getDocs, query, where, writeBatch } from "firebase/firestore";
+import { collection, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
 import { auth, db } from "@/firebase";
 import LayoutView from "@/components/high-level/layout-view";
 import { router } from "expo-router";
@@ -60,7 +60,8 @@ export default function Requests() {
     if (!businessId) { setLoading(false); return; }
 
     const q = query(
-      collection(db, "businesses", businessId, "appointments"),
+      collection(db, "appointments"),
+      where("businessId", "==", businessId),
       where("status", "==", "pending")
     );
     getDocs(q)
@@ -82,12 +83,7 @@ export default function Requests() {
 
     setResolving(requestId);
     try {
-      const batch = writeBatch(db);
-      const businessRef = doc(db, "businesses", businessId, "appointments", requestId);
-      const userRef = doc(db, "users", request.customerId, "appointments", requestId);
-      batch.update(businessRef, { status: newStatus });
-      batch.update(userRef, { status: newStatus });
-      await batch.commit();
+      await updateDoc(doc(db, "appointments", requestId), { status: newStatus });
 
       setRequests((current) => current.filter((item) => item.id !== requestId));
       setArchivedCount((v) => v + 1);

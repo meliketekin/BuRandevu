@@ -4,7 +4,7 @@ import { Calendar as RNCalendar, LocaleConfig } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
-import { collection, doc, getDocs, orderBy, query, writeBatch } from "firebase/firestore";
+import { collection, doc, getDocs, orderBy, query, updateDoc, where } from "firebase/firestore";
 import { auth, db } from "@/firebase";
 import useAuthStore from "@/store/auth-store";
 import LayoutView from "@/components/high-level/layout-view";
@@ -75,7 +75,8 @@ export default function CustomerRandevular() {
     if (!customerId) { setLoading(false); return; }
 
     const q = query(
-      collection(db, "users", customerId, "appointments"),
+      collection(db, "appointments"),
+      where("customerId", "==", customerId),
       orderBy("date", "asc")
     );
     getDocs(q)
@@ -110,10 +111,7 @@ export default function CustomerRandevular() {
 
     setCancelling(true);
     try {
-      const batch = writeBatch(db);
-      batch.update(doc(db, "users", customerId, "appointments", apt.id), { status: AppointmentStatusEnum.Cancelled });
-      batch.update(doc(db, "businesses", apt.businessId, "appointments", apt.id), { status: AppointmentStatusEnum.Cancelled });
-      await batch.commit();
+      await updateDoc(doc(db, "appointments", apt.id), { status: AppointmentStatusEnum.Cancelled });
 
       setAppointments((prev) =>
         prev.map((a) => a.id === apt.id ? { ...a, status: AppointmentStatusEnum.Cancelled } : a)

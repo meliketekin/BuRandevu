@@ -4,9 +4,10 @@ import DateTimePicker from "@/components/high-level/date-time-picker";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { addDoc, collection, doc, getDoc, getDocs, orderBy, query, serverTimestamp, updateDoc } from "firebase/firestore";
+import { createUserWithEmailAndPassword, sendPasswordResetEmail, updateProfile } from "firebase/auth";
+import { addDoc, collection, doc, getDoc, getDocs, orderBy, query, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { router, useLocalSearchParams } from "expo-router";
-import { auth, db } from "@/firebase";
+import { auth, db, secondaryAuth } from "@/firebase";
 import LayoutView from "@/components/high-level/layout-view";
 import FormBottomBar from "@/components/high-level/form-bottom-bar";
 import CustomImage from "@/components/high-level/custom-image";
@@ -41,9 +42,7 @@ const DEFAULT_HOURS = [
 ];
 
 function hoursToMap(hoursArray) {
-  return Object.fromEntries(
-    hoursArray.map(({ dayIndex, enabled, start, end }) => [String(dayIndex), { enabled, start, end }])
-  );
+  return Object.fromEntries(hoursArray.map(({ dayIndex, enabled, start, end }) => [String(dayIndex), { enabled, start, end }]));
 }
 
 function HourRow({ item, isLast, onToggle, onTimeChange }) {
@@ -244,6 +243,7 @@ export default function EmployeeForm() {
   const [employee, setEmployee] = useState(null);
   const [loadingEmployee, setLoadingEmployee] = useState(isEdit);
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [photoUri, setPhotoUri] = useState(null);
   const [hours, setHours] = useState(DEFAULT_HOURS);
@@ -254,41 +254,55 @@ export default function EmployeeForm() {
   const [isSaving, setIsSaving] = useState(false);
   const [loadingServices, setLoadingServices] = useState(true);
 
-  // Edit modunda çalışanı yükle
+  // Hizmetleri ve (edit modunda) çalışan verisini birlikte yükle.
+  // İki ayrı effect yerine tek bir Promise.all — edit modunda hizmet ID'lerini
+  // tam objelere dönüştürmek için hizmet listesinin hazır olması gerekiyor.
   useEffect(() => {
-    if (!isEdit) return;
     const uid = auth.currentUser?.uid;
-    if (!uid) { setLoadingEmployee(false); return; }
+    if (!uid) {
+      setLoadingEmployee(false);
+      setLoadingServices(false);
+      return;
+    }
 
-    getDoc(doc(db, "businesses", uid, "employees", employeeId))
-      .then((snap) => {
-        if (!snap.exists()) return;
-        const data = { id: snap.id, ...snap.data() };
-        setEmployee(data);
-        setName(data.name ?? "");
-        setPhone(data.phone ?? "");
-        setPhotoUri(data.photoUrl ?? null);
-        setSelectedServices(data.services ?? []);
-        if (data.workingHours) {
-          setHours(DEFAULT_HOURS.map((base) => ({ ...base, ...(data.workingHours[String(base.dayIndex)] ?? {}) })));
+    const servicesPromise = getDocs(
+      query(collection(db, "businesses", uid, "services"), orderBy("createdAt", "desc"))
+    );
+    const employeePromise = isEdit
+      ? getDoc(doc(db, "businesses", uid, "employees", employeeId))
+      : Promise.resolve(null);
+
+    Promise.all([servicesPromise, employeePromise])
+      .then(([servicesSnap, employeeSnap]) => {
+        const allServices = servicesSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        setBusinessServices(allServices);
+
+        if (employeeSnap?.exists()) {
+          const data = { id: employeeSnap.id, ...employeeSnap.data() };
+          setEmployee(data);
+          setName(data.name ?? "");
+          setEmail(data.email ?? "");
+          setPhone(data.phone ?? "");
+          setPhotoUri(data.photoUrl ?? null);
+          // Kaydedilen değer artık string ID array. Eski format (object array) için de
+          // backward-compat: her iki formattan da tam objeye dönüştürüyoruz.
+          const stored = data.services ?? [];
+          setSelectedServices(
+            stored
+              .map((s) => allServices.find((svc) => svc.id === (typeof s === "string" ? s : s.id)))
+              .filter(Boolean)
+          );
+          if (data.workingHours) {
+            setHours(DEFAULT_HOURS.map((base) => ({ ...base, ...(data.workingHours[String(base.dayIndex)] ?? {}) })));
+          }
         }
       })
-      .catch((err) => console.error("Employee load error:", err))
-      .finally(() => setLoadingEmployee(false));
-  }, [employeeId]);
-
-  // İşletme hizmetlerini yükle
-  useEffect(() => {
-    const uid = auth.currentUser?.uid;
-    if (!uid) { setLoadingServices(false); return; }
-
-    getDocs(query(collection(db, "businesses", uid, "services"), orderBy("createdAt", "desc")))
-      .then((snap) => {
-        setBusinessServices(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-      })
-      .catch((err) => console.error("Services load error:", err))
-      .finally(() => setLoadingServices(false));
-  }, []);
+      .catch((err) => console.error("Load error:", err))
+      .finally(() => {
+        setLoadingEmployee(false);
+        setLoadingServices(false);
+      });
+  }, [employeeId, isEdit]);
 
   const selectedIds = useMemo(() => selectedServices.map((s) => s.id), [selectedServices]);
 
@@ -360,6 +374,10 @@ export default function EmployeeForm() {
       CommandBus.sc.alertError("Eksik bilgi", "Çalışan adı gereklidir.", 2400);
       return;
     }
+    if (!isEdit && !email.trim()) {
+      CommandBus.sc.alertError("Eksik bilgi", "Çalışan e-posta adresi gereklidir.", 2400);
+      return;
+    }
 
     setIsSaving(true);
     try {
@@ -374,28 +392,71 @@ export default function EmployeeForm() {
 
       const payload = {
         name: name.trim(),
+        email: email.trim(),
         phone: phone.trim(),
         photoUrl,
         photoPublicId,
-        services: selectedServices,
+        services: selectedServices.map((s) => s.id),
         workingHours: hoursToMap(hours),
       };
 
       if (isEdit) {
         await updateDoc(doc(db, "businesses", uid, "employees", employeeId), payload);
         CommandBus.sc.alertSuccess("Güncellendi", `${name.trim()} güncellendi.`, 2600);
+        router.back();
       } else {
-        await addDoc(collection(db, "businesses", uid, "employees"), { ...payload, createdAt: serverTimestamp() });
-        CommandBus.sc.alertSuccess("Kaydedildi", `${name.trim()} eklendi.`, 2600);
+        // Çalışan için Firebase Auth hesabı oluştur (ikinci app instance üzerinden —
+        // işletme sahibinin oturumu kapanmaz).
+        const tempPassword = Math.random().toString(36).slice(2, 8) + Math.random().toString(36).toUpperCase().slice(2, 5) + "1!";
+
+        let employeeUid;
+        try {
+          const { user: employeeUser } = await createUserWithEmailAndPassword(secondaryAuth, email.trim(), tempPassword);
+          employeeUid = employeeUser.uid;
+          await updateProfile(employeeUser, { displayName: name.trim() });
+          await secondaryAuth.signOut();
+        } catch (authErr) {
+          const code = authErr?.code;
+          if (code === "auth/email-already-in-use") {
+            CommandBus.sc.alertError("Hata", "Bu e-posta adresi zaten kullanımda.", 3200);
+          } else if (code === "auth/invalid-email") {
+            CommandBus.sc.alertError("Hata", "Geçersiz e-posta adresi.", 3000);
+          } else {
+            CommandBus.sc.alertError("Hata", "Hesap oluşturulamadı. Lütfen tekrar deneyin.", 3200);
+          }
+          return;
+        }
+
+        // Firestore: kullanıcı dokümanı oluştur
+        await setDoc(doc(db, "users", employeeUid), {
+          uid: employeeUid,
+          name: name.trim(),
+          email: email.trim(),
+          userType: "employee",
+          businessId: uid,
+          createdAt: serverTimestamp(),
+        });
+
+        // Firestore: çalışan dokümanı (UID'yi doküman ID olarak kullan)
+        await setDoc(doc(db, "businesses", uid, "employees", employeeUid), {
+          ...payload,
+          uid: employeeUid,
+          createdAt: serverTimestamp(),
+        });
+
+        // Çalışana şifre belirleme daveti gönder
+        await sendPasswordResetEmail(auth, email.trim());
+
+        CommandBus.sc.alertSuccess("Kaydedildi", `${name.trim()} eklendi. Giriş bilgileri ${email.trim()} adresine gönderildi.`, 4000);
+        router.back();
       }
-      router.back();
     } catch (err) {
       console.error("saveEmployee error:", err);
       CommandBus.sc.alertError("Hata", "Çalışan kaydedilirken bir sorun oluştu.", 3200);
     } finally {
       setIsSaving(false);
     }
-  }, [name, phone, photoUri, hours, selectedServices, employee, isEdit, employeeId, uploadPhoto]);
+  }, [name, email, phone, photoUri, hours, selectedServices, employee, isEdit, employeeId, uploadPhoto]);
 
   const toggleDay = useCallback((dayIndex) => {
     setHours((prev) => prev.map((item) => (item.dayIndex === dayIndex ? { ...item, enabled: !item.enabled } : item)));
@@ -445,6 +506,7 @@ export default function EmployeeForm() {
           {/* Temel bilgiler */}
           <View style={styles.section}>
             <FormInput label="Ad Soyad" value={name} onChangeText={setName} />
+            <FormInput label="E-posta adresi" value={email} onChangeText={isEdit ? undefined : setEmail} editable={!isEdit} keyboardType="email-address" autoCapitalize="none" />
             <FormInput label="Telefon numarası" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
           </View>
 

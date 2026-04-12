@@ -12,39 +12,34 @@ service cloud.firestore {
       allow read, write: if request.auth.uid == uid;
     }
 
-    // Kullanıcının kendi randevuları
-    // - Okuma/yazma: müşterinin kendisi
-    // - Güncelleme: randevunun işletme sahibi de güncelleyebilir (onayla/reddet)
-    match /users/{uid}/appointments/{appointmentId} {
-      allow read, write: if request.auth.uid == uid;
-      allow update: if resource.data.businessId == request.auth.uid;
-    }
-
     // İşletme bilgisi — herkes okuyabilir, sadece sahibi yazar
     match /businesses/{uid} {
       allow read: if request.auth != null;
       allow write: if request.auth.uid == uid;
     }
 
-    // İşletmeye ait hizmet, çalışan gibi alt koleksiyonlar
+    // İşletmeye ait hizmet ve çalışan gibi alt koleksiyonlar
     // Herkes okuyabilir (müşteri randevu alımı için gerekli), sadece sahibi yazar
     match /businesses/{uid}/{collection}/{docId} {
       allow read: if request.auth != null;
       allow write: if request.auth.uid == uid;
     }
 
-    // İşletmenin randevuları:
-    // - Okuma: işletme sahibi veya randevunun müşterisi
-    // - Oluşturma: giriş yapmış herhangi bir kullanıcı (müşteri randevu alabilmeli)
-    // - Güncelleme: işletme sahibi (onayla/reddet) veya randevunun müşterisi (iptal)
-    match /businesses/{businessId}/appointments/{appointmentId} {
-      allow read: if request.auth.uid == businessId
-                  || resource.data.customerId == request.auth.uid;
+    // Randevular — tek top-level koleksiyon
+    // - Okuma:    müşterinin kendisi VEYA randevunun işletme sahibi
+    // - Oluşturma: giriş yapmış müşteri, status "pending" ve customerId kendi UID'si olmalı
+    // - Güncelleme: işletme sahibi (onay/ret) VEYA müşteri (sadece iptal)
+    match /appointments/{appointmentId} {
+      allow read: if request.auth != null
+                  && (resource.data.customerId == request.auth.uid
+                      || resource.data.businessId == request.auth.uid);
       allow create: if request.auth != null
                     && request.resource.data.customerId == request.auth.uid
                     && request.resource.data.status == "pending";
-      allow update: if request.auth.uid == businessId
-                    || resource.data.customerId == request.auth.uid;
+      allow update: if request.auth != null
+                    && (resource.data.businessId == request.auth.uid
+                        || (resource.data.customerId == request.auth.uid
+                            && request.resource.data.status == "cancelled"));
     }
   }
 }

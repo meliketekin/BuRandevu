@@ -53,9 +53,9 @@ export default function Login() {
       const { user } = await signInWithEmailAndPassword(auth, state.email, state.password);
       const snap = await getDoc(doc(db, "users", user.uid));
       const data = snap.exists() ? snap.data() : {};
-      const userType = data.userType ?? "customer";
-      const isAdmin = data.isAdmin ?? false;
-      const isBusinessInfoCompleted = data.isBusinessInfoCompleted ?? false;
+      const userType = data.userType;
+      const isAdmin = data.isAdmin;
+      const isBusinessInfoCompleted = data.isBusinessInfoCompleted;
       setAuth(user, userType, isAdmin, isBusinessInfoCompleted);
       if (isAdmin && !isBusinessInfoCompleted) {
         router.replace("/auth/business-info-form");
