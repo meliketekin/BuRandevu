@@ -234,17 +234,6 @@ const CreateAppointment = () => {
     return [ANY_EMPLOYEE, ...eligible];
   };
 
-  // Validator kayıtları — her render'da güncel değerle çalışır
-  const employeeErrors = {};
-  selectedServices.forEach((service) => {
-    employeeErrors[service.id] = validator.registerDestructuring({
-      name: `employee_${service.id}`,
-      value: selectedEmployeeIds[service.id] ?? null,
-      rules: [{ rule: "required", value: 1 }],
-      validatorScopeKey,
-    });
-  });
-
   const timeError = validator.registerDestructuring({
     name: "time",
     value: selectedTime,
@@ -355,7 +344,7 @@ const CreateAppointment = () => {
                     value={selectedEmp?.name ?? null}
                     style={styles.selectField}
                     required
-                    error={employeeErrors[service.id]}
+                    error={validator.registerDestructuring({ name: `employee_${service.id}`, value: selectedEmployeeIds[service.id] ?? null, rules: [{ rule: "required", value: 1 }], validatorScopeKey })}
                     selectModalProps={{
                       title: "Çalışan Seçin",
                       items: employeeItems,

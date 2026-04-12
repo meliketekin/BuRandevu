@@ -56,7 +56,8 @@ export default function Login() {
       const userType = data.userType;
       const isAdmin = data.isAdmin;
       const isBusinessInfoCompleted = data.isBusinessInfoCompleted;
-      setAuth(user, userType, isAdmin, isBusinessInfoCompleted);
+      const businessId = data.businessId ?? (userType === "business" && isAdmin ? user.uid : null);
+      setAuth(user, userType, isAdmin, isBusinessInfoCompleted, businessId);
       if (isAdmin && !isBusinessInfoCompleted) {
         router.replace("/auth/business-info-form");
       } else {

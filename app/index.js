@@ -40,7 +40,8 @@ export default function Onboarding() {
           const userType = data.userType ?? "customer";
           const isAdmin = data.isAdmin ?? false;
           const isBusinessInfoCompleted = data.isBusinessInfoCompleted ?? false;
-          setAuth(firebaseUser, userType, isAdmin, isBusinessInfoCompleted);
+          const businessId = data.businessId ?? (userType === "business" && isAdmin ? firebaseUser.uid : null);
+          setAuth(firebaseUser, userType, isAdmin, isBusinessInfoCompleted, businessId);
           if (isAdmin && !isBusinessInfoCompleted) {
             router.replace("/auth/business-info-form");
           } else {

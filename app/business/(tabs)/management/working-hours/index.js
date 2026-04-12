@@ -4,6 +4,7 @@ import { openModal, ModalTypeEnum } from "@/components/high-level/modal-renderer
 import { Ionicons } from "@expo/vector-icons";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { router, useNavigation } from "expo-router";
+import useAuthStore from "@/store/auth-store";
 import { Calendar as RNCalendar, LocaleConfig } from "react-native-calendars";
 import DateTimePicker from "@/components/high-level/date-time-picker";
 import LayoutView from "@/components/high-level/layout-view";
@@ -253,14 +254,30 @@ export default function WorkingHours() {
   const initialSnapshotRef = useRef(createHoursSnapshot(DEFAULT_HOURS, []));
   const allowRemoveRef = useRef(false);
 
+  const isAdmin = useAuthStore((s) => s.isAdmin);
+  const userType = useAuthStore((s) => s.userType);
+  const storedBusinessId = useAuthStore((s) => s.businessId);
+  const isEmployee = userType === "business" && !isAdmin;
+  const currentUid = auth.currentUser?.uid;
+
+  // Okunacak/yazılacak Firestore doküman referansı
+  const hoursDocRef = useMemo(() => {
+    if (!currentUid) return null;
+    if (isEmployee && storedBusinessId) {
+      // Çalışan: kendi çalışan dokümanını günceller
+      return doc(db, "businesses", storedBusinessId, "employees", currentUid);
+    }
+    // İşletme sahibi: business dokümanını günceller
+    return doc(db, "businesses", currentUid);
+  }, [isEmployee, storedBusinessId, currentUid]);
+
   useEffect(() => {
-    const uid = auth.currentUser?.uid;
-    if (!uid) {
+    if (!hoursDocRef) {
       setLoading(false);
       return;
     }
 
-    getDoc(doc(db, "businesses", uid))
+    getDoc(hoursDocRef)
       .then((snap) => {
         if (!snap.exists()) return;
         const data = snap.data();
@@ -291,7 +308,7 @@ export default function WorkingHours() {
       })
       .catch((err) => console.error("Business hours load error:", err))
       .finally(() => setLoading(false));
-  }, []);
+  }, [hoursDocRef]);
 
   useEffect(() => {
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
@@ -440,8 +457,7 @@ export default function WorkingHours() {
   }, [hours, specialDays]);
 
   const handleSave = useCallback(async () => {
-    const uid = auth.currentUser?.uid;
-    if (!uid) {
+    if (!hoursDocRef) {
       CommandBus.sc.alertError("Hata", "Kullanıcı bulunamadı.", 2600);
       return;
     }
@@ -454,7 +470,7 @@ export default function WorkingHours() {
 
     setIsSaving(true);
     try {
-      await updateDoc(doc(db, "businesses", uid), {
+      await updateDoc(hoursDocRef, {
         workingHours: hoursToMap(hours),
         specialWorkingHours: specialDays.map((item) => ({
           date: item.date,
@@ -474,7 +490,7 @@ export default function WorkingHours() {
     } finally {
       setIsSaving(false);
     }
-  }, [findInvalidRange, hours, specialDays]);
+  }, [findInvalidRange, hours, specialDays, hoursDocRef]);
 
   const handleAttemptLeave = useCallback(
     (action) => {

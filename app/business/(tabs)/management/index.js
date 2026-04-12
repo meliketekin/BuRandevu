@@ -49,21 +49,24 @@ function DashboardActionCard({ item, featured, onPress }) {
 export default function Management() {
   const insets = useSafeAreaInsets();
   const isAdmin = useAuthStore((s) => s.isAdmin);
+  const userType = useAuthStore((s) => s.userType);
+  const isEmployee = userType === "business" && !isAdmin;
 
-  const dashboardCards = useMemo(
+  const allCards = useMemo(
     () => [
       {
         key: "employees",
-        title: isAdmin ? "Çalışanlar" : "Ekibim",
+        title: "Çalışanlar",
         caption: "Çalışanlarını gör, ekle ve düzenle",
         icon: "people-outline",
         image: CARD_IMAGES.employees,
         route: "/business/management/employees",
+        ownerOnly: true,
       },
       {
         key: "services",
         title: "Hizmetler",
-        caption: "Hizmetlerini gör, ekle ve düzenle",
+        caption: isEmployee ? "Hizmetlerini görüntüle" : "Hizmetlerini gör, ekle ve düzenle",
         icon: "cut-outline",
         image: CARD_IMAGES.services,
         route: "/business/management/services",
@@ -75,6 +78,7 @@ export default function Management() {
         icon: "business-outline",
         image: CARD_IMAGES.business,
         route: "/business/management/business-info",
+        ownerOnly: true,
       },
       {
         key: "workingHours",
@@ -86,14 +90,19 @@ export default function Management() {
       },
       {
         key: "accounting",
-        title: "Muhasebe",
-        caption: "Günlük ciroyu incele",
+        title: isEmployee ? "İstatistiklerim" : "Muhasebe",
+        caption: isEmployee ? "Kendi cironu ve randevularını incele" : "Günlük ciroyu incele",
         icon: "wallet-outline",
         image: CARD_IMAGES.accounting,
         route: "/business/management/accounting",
       },
     ],
-    [isAdmin],
+    [isAdmin, isEmployee],
+  );
+
+  const dashboardCards = useMemo(
+    () => isEmployee ? allCards.filter((c) => !c.ownerOnly) : allCards,
+    [isEmployee, allCards],
   );
 
   const handleCardPress = (item) => {

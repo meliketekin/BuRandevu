@@ -145,6 +145,12 @@ export default function EmployeeDetail() {
           <CustomText extraBold fontSize={26} color={Colors.BrandPrimary} style={styles.profileName}>
             {employee.name}
           </CustomText>
+          {!!employee.email && (
+            <View style={styles.phoneRow}>
+              <Ionicons name="mail-outline" size={14} color={Colors.LightGray2} />
+              <CustomText medium fontSize={13} color={Colors.LightGray2}>{employee.email}</CustomText>
+            </View>
+          )}
           {!!employee.phone && (
             <View style={styles.phoneRow}>
               <Ionicons name="call-outline" size={14} color={Colors.LightGray2} />

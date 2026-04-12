@@ -3,8 +3,13 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // Kullanıcı profil belgesi — sadece kendisi okur/yazar
+    // İstisna: işletme sahibi kendi businessId'siyle eşleşen çalışan belgesi oluşturabilir
     match /users/{uid} {
       allow read, write: if request.auth.uid == uid;
+      allow create: if request.auth != null
+                    && request.resource.data.userType == 'business'
+                    && request.resource.data.isAdmin == false
+                    && request.resource.data.businessId == request.auth.uid;
     }
 
     // Favoriler — sadece kendi kullanıcısı okur/yazar
@@ -20,9 +25,14 @@ service cloud.firestore {
 
     // İşletmeye ait hizmet ve çalışan gibi alt koleksiyonlar
     // Herkes okuyabilir (müşteri randevu alımı için gerekli), sadece sahibi yazar
+    // İstisna: çalışan kendi employee dokümanını (çalışma saatleri vb.) güncelleyebilir
     match /businesses/{uid}/{collection}/{docId} {
       allow read: if request.auth != null;
       allow write: if request.auth.uid == uid;
+      allow update: if request.auth != null
+                    && collection == "employees"
+                    && docId == request.auth.uid
+                    && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.businessId == uid;
     }
 
     // Randevular — tek top-level koleksiyon

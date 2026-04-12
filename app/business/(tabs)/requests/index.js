@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, View, StyleSheet, ScrollView, Pressable, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { collection, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
+import { collection, doc, getDocs, query, where, writeBatch } from "firebase/firestore";
 import { auth, db } from "@/firebase";
+import useAuthStore from "@/store/auth-store";
 import LayoutView from "@/components/high-level/layout-view";
-import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import CustomText from "@/components/high-level/custom-text";
 import CustomModal from "@/components/high-level/custom-modal";
@@ -50,32 +50,42 @@ export default function Requests() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [resolving, setResolving] = useState(null); // appointmentId being resolved
-  const [archivedCount, setArchivedCount] = useState(0);
   const [selectedRequest, setSelectedRequest] = useState(null);
+
+  const isAdmin = useAuthStore((s) => s.isAdmin);
+  const userType = useAuthStore((s) => s.userType);
+  const storedBusinessId = useAuthStore((s) => s.businessId);
+  const isEmployee = userType === "business" && !isAdmin;
+  const currentUid = auth.currentUser?.uid;
 
   const isWide = width >= 768;
 
   useEffect(() => {
-    const businessId = auth.currentUser?.uid;
-    if (!businessId) { setLoading(false); return; }
+    const bizId = isEmployee ? storedBusinessId : currentUid;
+    if (!bizId) { setLoading(false); return; }
 
     const q = query(
-      collection(db, "appointments"),
-      where("businessId", "==", businessId),
+      collection(db, "businesses", bizId, "appointments"),
       where("status", "==", "pending")
     );
     getDocs(q)
       .then((snap) => {
-        const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        let items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        // Çalışan yalnızca kendisine atanan randevuları görür
+        if (isEmployee && currentUid) {
+          items = items.filter((item) =>
+            item.employeeIds && Object.values(item.employeeIds).includes(currentUid)
+          );
+        }
         setRequests(items);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [isEmployee, storedBusinessId, currentUid]);
 
   const pendingCount = requests.length;
 
   const handleResolve = async (requestId, newStatus) => {
-    const businessId = auth.currentUser?.uid;
+    const businessId = isEmployee ? storedBusinessId : currentUid;
     if (!businessId) return;
 
     const request = requests.find((r) => r.id === requestId);
@@ -83,10 +93,14 @@ export default function Requests() {
 
     setResolving(requestId);
     try {
-      await updateDoc(doc(db, "appointments", requestId), { status: newStatus });
+      const batch = writeBatch(db);
+      const businessRef = doc(db, "businesses", businessId, "appointments", requestId);
+      const userRef = doc(db, "users", request.customerId, "appointments", requestId);
+      batch.update(businessRef, { status: newStatus });
+      batch.update(userRef, { status: newStatus });
+      await batch.commit();
 
       setRequests((current) => current.filter((item) => item.id !== requestId));
-      setArchivedCount((v) => v + 1);
       setSelectedRequest((current) => (current?.id === requestId ? null : current));
     } catch (e) {
       console.error("Randevu güncellenemedi:", e);
@@ -180,22 +194,7 @@ export default function Requests() {
             <CustomText xs semibold color={Colors.LightGray2} style={styles.footerLabel}>
               {pendingCount ? "Tüm talepler görüntülendi" : "Talep kuyruğu temiz"}
             </CustomText>
-            <View style={styles.footerDivider} />
-            <Pressable onPress={() => router.push("/business/yonetim")} hitSlop={8}>
-              <View style={styles.footerLinkRow}>
-                <CustomText xs bold color={PALETTE.tertiary}>
-                  ARŞİVE GİT
-                </CustomText>
-                <Ionicons name="arrow-forward" size={14} color={PALETTE.tertiary} />
-              </View>
-            </Pressable>
           </View>
-
-          {!!archivedCount && (
-            <CustomText xs color={Colors.LightGray2} center style={styles.archiveHint}>
-              Bu oturumda {archivedCount} talep işlendi.
-            </CustomText>
-          )}
         </View>
       </ScrollView>
 
@@ -517,19 +516,6 @@ const styles = StyleSheet.create({
   footerLabel: {
     textTransform: "uppercase",
     letterSpacing: 1.2,
-  },
-  footerDivider: {
-    width: 1,
-    height: 16,
-    backgroundColor: "rgba(196,199,199,0.35)",
-  },
-  footerLinkRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  archiveHint: {
-    lineHeight: 18,
   },
   modalContent: {
     paddingHorizontal: 22,

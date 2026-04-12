@@ -4,7 +4,7 @@ import DateTimePicker from "@/components/high-level/date-time-picker";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { createUserWithEmailAndPassword, sendPasswordResetEmail, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { addDoc, collection, doc, getDoc, getDocs, orderBy, query, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { router, useLocalSearchParams } from "expo-router";
 import { auth, db, secondaryAuth } from "@/firebase";
@@ -17,6 +17,8 @@ import ActivityLoading from "@/components/high-level/activity-loading";
 import { Colors } from "@/constants/colors";
 import CommandBus from "@/infrastructures/command-bus/command-bus";
 import { CloudinaryConfig } from "@/config/app-config";
+import Validator from "@/infrastructures/validation";
+import useReRender from "@/hooks/use-re-render";
 
 function timeStringToDate(str) {
   const [h, m] = str.split(":").map(Number);
@@ -239,6 +241,8 @@ function ServicePickerModal({ visible, businessServices, selectedIds, onToggle, 
 export default function EmployeeForm() {
   const { id: employeeId } = useLocalSearchParams();
   const isEdit = !!employeeId;
+  const reRender = useReRender();
+  const [validator] = useState(() => new Validator());
 
   const [employee, setEmployee] = useState(null);
   const [loadingEmployee, setLoadingEmployee] = useState(isEdit);
@@ -253,6 +257,7 @@ export default function EmployeeForm() {
   const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [loadingServices, setLoadingServices] = useState(true);
+  const [businessName, setBusinessName] = useState("");
 
   // Hizmetleri ve (edit modunda) çalışan verisini birlikte yükle.
   // İki ayrı effect yerine tek bir Promise.all — edit modunda hizmet ID'lerini
@@ -271,11 +276,13 @@ export default function EmployeeForm() {
     const employeePromise = isEdit
       ? getDoc(doc(db, "businesses", uid, "employees", employeeId))
       : Promise.resolve(null);
+    const businessPromise = getDoc(doc(db, "businesses", uid));
 
-    Promise.all([servicesPromise, employeePromise])
-      .then(([servicesSnap, employeeSnap]) => {
+    Promise.all([servicesPromise, employeePromise, businessPromise])
+      .then(([servicesSnap, employeeSnap, businessSnap]) => {
         const allServices = servicesSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
         setBusinessServices(allServices);
+        setBusinessName(businessSnap.data()?.businessName ?? "");
 
         if (employeeSnap?.exists()) {
           const data = { id: employeeSnap.id, ...employeeSnap.data() };
@@ -365,17 +372,15 @@ export default function EmployeeForm() {
   }, []);
 
   const saveEmployee = useCallback(async () => {
+    reRender();
+    if (!validator.allValid()) return;
+
+    // Non-ASCII karakterleri temizle (autocomplete/copy-paste kaynaklı olabilir)
+    const cleanEmail = email.trim().replace(/[^\x00-\x7F]/g, "");
+
     const uid = auth.currentUser?.uid;
     if (!uid) {
       CommandBus.sc.alertError("Hata", "Kullanıcı bulunamadı.", 2600);
-      return;
-    }
-    if (!name.trim()) {
-      CommandBus.sc.alertError("Eksik bilgi", "Çalışan adı gereklidir.", 2400);
-      return;
-    }
-    if (!isEdit && !email.trim()) {
-      CommandBus.sc.alertError("Eksik bilgi", "Çalışan e-posta adresi gereklidir.", 2400);
       return;
     }
 
@@ -392,7 +397,7 @@ export default function EmployeeForm() {
 
       const payload = {
         name: name.trim(),
-        email: email.trim(),
+        email: cleanEmail,
         phone: phone.trim(),
         photoUrl,
         photoPublicId,
@@ -411,7 +416,7 @@ export default function EmployeeForm() {
 
         let employeeUid;
         try {
-          const { user: employeeUser } = await createUserWithEmailAndPassword(secondaryAuth, email.trim(), tempPassword);
+          const { user: employeeUser } = await createUserWithEmailAndPassword(secondaryAuth, cleanEmail, tempPassword);
           employeeUid = employeeUser.uid;
           await updateProfile(employeeUser, { displayName: name.trim() });
           await secondaryAuth.signOut();
@@ -431,8 +436,9 @@ export default function EmployeeForm() {
         await setDoc(doc(db, "users", employeeUid), {
           uid: employeeUid,
           name: name.trim(),
-          email: email.trim(),
-          userType: "employee",
+          email: cleanEmail,
+          userType: "business",
+          isAdmin: false,
           businessId: uid,
           createdAt: serverTimestamp(),
         });
@@ -444,10 +450,90 @@ export default function EmployeeForm() {
           createdAt: serverTimestamp(),
         });
 
-        // Çalışana şifre belirleme daveti gönder
-        await sendPasswordResetEmail(auth, email.trim());
+        // Brevo ile davet maili gönder
+        try {
+          const mailRes = await fetch("https://api.brevo.com/v3/smtp/email", {
+            method: "POST",
+            headers: {
+              "api-key": process.env.EXPO_PUBLIC_BREVO_API_KEY,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              sender: { name: "BuRandevu", email: "burandevu.official@gmail.com" },
+              to: [{ email: cleanEmail, name: name.trim() }],
+              subject: "BuRandevu - Hesabınız oluşturuldu",
+              htmlContent: `<!DOCTYPE html>
+<html lang="tr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f4f7;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f7;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" style="max-width:520px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.07);">
 
-        CommandBus.sc.alertSuccess("Kaydedildi", `${name.trim()} eklendi. Giriş bilgileri ${email.trim()} adresine gönderildi.`, 4000);
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);padding:36px 40px;text-align:center;">
+            <p style="margin:0 0 6px;font-size:13px;letter-spacing:3px;color:rgba(255,255,255,0.5);text-transform:uppercase;">BuRandevu</p>
+            <h1 style="margin:0;font-size:26px;font-weight:700;color:#ffffff;">Hesabınız Hazır</h1>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:36px 40px;">
+            <p style="margin:0 0 8px;font-size:20px;font-weight:600;color:#1a1a2e;">Merhaba, ${name.trim()} 👋</p>
+            <p style="margin:0 0 24px;font-size:15px;color:#555;line-height:1.7;">
+              <strong style="color:#1a1a2e;">${businessName}</strong> ekibine BuRandevu üzerinden eklendiniz.
+              Aşağıdaki bilgilerle uygulamaya giriş yapabilirsiniz.
+            </p>
+
+            <!-- Credentials box -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f7f8fc;border-radius:12px;border:1px solid #e8eaf0;margin-bottom:24px;">
+              <tr>
+                <td style="padding:20px 24px;border-bottom:1px solid #e8eaf0;">
+                  <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:1.2px;color:#999;text-transform:uppercase;">E-posta</p>
+                  <p style="margin:0;font-size:15px;font-weight:600;color:#1a1a2e;">${cleanEmail}</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:20px 24px;">
+                  <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:1.2px;color:#999;text-transform:uppercase;">Geçici Şifre</p>
+                  <p style="margin:0;font-size:22px;font-weight:700;color:#1a1a2e;letter-spacing:3px;">${tempPassword}</p>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:0;font-size:13px;color:#999;line-height:1.6;">
+              Güvenliğiniz için giriş yaptıktan sonra şifrenizi değiştirmenizi öneririz.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="background:#f7f8fc;padding:20px 40px;text-align:center;border-top:1px solid #e8eaf0;">
+            <p style="margin:0;font-size:12px;color:#aaa;">Bu mail <strong style="color:#888;">BuRandevu</strong> tarafından otomatik gönderilmiştir.</p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+            }),
+          });
+          const mailData = await mailRes.json();
+          if (!mailRes.ok) {
+            console.error("Brevo error:", mailRes.status, JSON.stringify(mailData));
+          } else {
+            console.log("Brevo success:", mailData.messageId);
+          }
+        } catch (mailErr) {
+          console.error("Brevo fetch error:", mailErr);
+        }
+
+        CommandBus.sc.alertSuccess("Kaydedildi", `${name.trim()} eklendi. Giriş bilgileri ${cleanEmail} adresine gönderildi.`, 4000);
         router.back();
       }
     } catch (err) {
@@ -456,7 +542,7 @@ export default function EmployeeForm() {
     } finally {
       setIsSaving(false);
     }
-  }, [name, email, phone, photoUri, hours, selectedServices, employee, isEdit, employeeId, uploadPhoto]);
+  }, [name, email, phone, photoUri, hours, selectedServices, employee, isEdit, employeeId, uploadPhoto, reRender, validator]);
 
   const toggleDay = useCallback((dayIndex) => {
     setHours((prev) => prev.map((item) => (item.dayIndex === dayIndex ? { ...item, enabled: !item.enabled } : item)));
@@ -473,6 +559,14 @@ export default function EmployeeForm() {
       </LayoutView>
     );
   }
+
+  const validatorScopeKey = validator.scopeKey;
+  const servicesError = validator.registerDestructuring({
+    name: "selectedServices",
+    value: selectedServices,
+    rules: [{ rule: "minArrayLengthRequired", value: 1 }],
+    validatorScopeKey,
+  });
 
   return (
     <LayoutView showBackButton title={isEdit ? "Çalışanı düzenle" : "Çalışan ekle"} paddingHorizontal={24} backgroundColor={Colors.BrandBackground}>
@@ -505,9 +599,31 @@ export default function EmployeeForm() {
 
           {/* Temel bilgiler */}
           <View style={styles.section}>
-            <FormInput label="Ad Soyad" value={name} onChangeText={setName} />
-            <FormInput label="E-posta adresi" value={email} onChangeText={isEdit ? undefined : setEmail} editable={!isEdit} keyboardType="email-address" autoCapitalize="none" />
-            <FormInput label="Telefon numarası" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+            <FormInput
+              label="Ad Soyad"
+              value={name}
+              onChangeText={setName}
+              required
+              error={validator.registerDestructuring({ name: "name", value: name, rules: [{ rule: "required", value: 1 }], validatorScopeKey })}
+            />
+            <FormInput
+              label="E-posta adresi"
+              value={email}
+              onChangeText={isEdit ? undefined : setEmail}
+              editable={!isEdit}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              required={!isEdit}
+              error={!isEdit ? validator.registerDestructuring({ name: "email", value: email, rules: [{ rule: "required", value: 1 }, { rule: "isEmail", value: 1 }], validatorScopeKey }) : null}
+            />
+            <FormInput
+              label="Telefon numarası"
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+              required
+              error={validator.registerDestructuring({ name: "phone", value: phone, rules: [{ rule: "required", value: 1 }], validatorScopeKey })}
+            />
           </View>
 
           {/* Çalışma saatleri */}
@@ -555,7 +671,7 @@ export default function EmployeeForm() {
                 </View>
               ))}
 
-              <Pressable style={({ pressed }) => [styles.addServiceBtn, pressed && styles.pressed]} onPress={() => setServicePickerVisible(true)}>
+              <Pressable style={({ pressed }) => [styles.addServiceBtn, servicesError && styles.addServiceBtnError, pressed && styles.pressed]} onPress={() => setServicePickerVisible(true)}>
                 {loadingServices ? (
                   <ActivityLoading size="small" />
                 ) : (
@@ -567,6 +683,11 @@ export default function EmployeeForm() {
                   </>
                 )}
               </Pressable>
+              {!!servicesError && (
+                <CustomText fontSize={12} color={Colors.ErrorColor} style={styles.servicesErrorText}>
+                  {servicesError}
+                </CustomText>
+              )}
             </View>
           </View>
         </KeyboardAwareScrollView>
@@ -584,7 +705,7 @@ export default function EmployeeForm() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { flex: 1 },
-  scrollContent: { paddingTop: 12, paddingBottom: 120, gap: 28 },
+  scrollContent: { paddingTop: 12, paddingBottom: 140, gap: 28 },
 
   // Fotoğraf
   photoSection: { alignItems: "center" },
@@ -691,6 +812,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
     backgroundColor: "rgba(255,255,255,0.4)",
+  },
+  addServiceBtnError: {
+    borderColor: Colors.ErrorColor,
+  },
+  servicesErrorText: {
+    paddingHorizontal: 4,
   },
 
   // Service Picker Modal

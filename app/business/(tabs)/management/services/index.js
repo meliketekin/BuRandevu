@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { collection, deleteDoc, doc, onSnapshot, orderBy, query } from "firebase/firestore";
 import { auth, db } from "@/firebase";
+import useAuthStore from "@/store/auth-store";
 import { openModal, ModalTypeEnum } from "@/components/high-level/modal-renderer";
 import CommandBus from "@/infrastructures/command-bus/command-bus";
 import LayoutView from "@/components/high-level/layout-view";
@@ -24,6 +25,12 @@ export default function Services() {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
 
+  const isAdmin = useAuthStore((s) => s.isAdmin);
+  const userType = useAuthStore((s) => s.userType);
+  const storedBusinessId = useAuthStore((s) => s.businessId);
+  const isEmployee = userType === "business" && !isAdmin;
+  const bizId = isEmployee ? storedBusinessId : auth.currentUser?.uid;
+
   const confirmDeleteService = useCallback((service) => {
     const label = service.name?.trim() || "Bu hizmet";
     openModal(ModalTypeEnum.ConfirmModal, {
@@ -33,14 +40,13 @@ export default function Services() {
       cancelText: "İptal",
       destructiveConfirm: true,
       onConfirm: async () => {
-        const uid = auth.currentUser?.uid;
-        if (!uid) {
+        if (!bizId) {
           CommandBus.sc.alertError("Hata", "Kullanıcı bulunamadı.", 2600);
           return;
         }
         setDeletingId(service.id);
         try {
-          await deleteDoc(doc(db, "businesses", uid, "services", service.id));
+          await deleteDoc(doc(db, "businesses", bizId, "services", service.id));
         } catch (e) {
           console.error("Service delete error:", e);
           CommandBus.sc.alertError("Hata", e?.message ?? "Hizmet silinirken bir sorun oluştu.", 3200);
@@ -49,14 +55,13 @@ export default function Services() {
         }
       },
     });
-  }, []);
+  }, [bizId]);
 
   useEffect(() => {
-    const uid = auth.currentUser?.uid;
-    if (!uid) { setLoading(false); return; }
+    if (!bizId) { setLoading(false); return; }
 
     const q = query(
-      collection(db, "businesses", uid, "services"),
+      collection(db, "businesses", bizId, "services"),
       orderBy("createdAt", "desc"),
     );
 
@@ -69,7 +74,7 @@ export default function Services() {
     });
 
     return unsubscribe;
-  }, []);
+  }, [bizId]);
 
   return (
     <LayoutView
@@ -77,7 +82,7 @@ export default function Services() {
       title="Hizmetler"
       backgroundColor={Colors.BrandBackground}
       paddingHorizontal={0}
-      onAddPress={() => router.push("/business/management/services/form")}
+      onAddPress={isEmployee ? undefined : () => router.push("/business/management/services/form")}
     >
       <ScrollView
         style={styles.scroll}
@@ -92,10 +97,12 @@ export default function Services() {
             </CustomText>
           </View>
           <CustomText extraBold fontSize={24} color={Colors.BrandPrimary} style={styles.heroTitle}>
-            Hizmetlerini daha iyi yönet
+            {isEmployee ? "Sunduğun hizmetler" : "Hizmetlerini daha iyi yönet"}
           </CustomText>
           <CustomText medium fontSize={13} color={Colors.LightGray2} style={styles.heroDescription}>
-            Fiyat, süre ve açıklama detaylarını tek ekranda düzenleyip hizmet deneyimini daha modern bir yapıda yönet.
+            {isEmployee
+              ? "İşletmenin sana atadığı hizmetleri buradan görüntüleyebilirsin."
+              : "Fiyat, süre ve açıklama detaylarını tek ekranda düzenleyip hizmet deneyimini daha modern bir yapıda yönet."}
           </CustomText>
         </View>
 
@@ -109,9 +116,11 @@ export default function Services() {
             <CustomText bold fontSize={15} color={Colors.BrandPrimary}>
               Henüz hizmet yok
             </CustomText>
-            <CustomText medium fontSize={13} color={Colors.LightGray2} style={styles.emptyDescription}>
-              Sağ üstteki + butonuna basarak ilk hizmetini ekle.
-            </CustomText>
+            {!isEmployee && (
+              <CustomText medium fontSize={13} color={Colors.LightGray2} style={styles.emptyDescription}>
+                Sağ üstteki + butonuna basarak ilk hizmetini ekle.
+              </CustomText>
+            )}
           </View>
         ) : (
           <View style={styles.list}>
@@ -137,34 +146,36 @@ export default function Services() {
                   </View>
                 </View>
 
-                <View style={styles.cardActions}>
-                  <Pressable
-                    style={({ pressed }) => [styles.editButton, pressed && styles.pressed]}
-                    disabled={deletingId === service.id}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/business/management/services/form",
-                        params: {
-                          mode: "edit",
-                          id: service.id,
-                          name: service.name,
-                          description: service.description ?? "",
-                          price: String(service.price),
-                          duration: String(service.durationMinutes),
-                        },
-                      })
-                    }
-                  >
-                    <Ionicons name="create-outline" size={16} color={Colors.BrandPrimary} />
-                  </Pressable>
-                  <Pressable
-                    style={({ pressed }) => [styles.deleteButton, pressed && styles.pressed]}
-                    disabled={deletingId === service.id}
-                    onPress={() => confirmDeleteService(service)}
-                  >
-                    <Ionicons name="trash-outline" size={16} color={Colors.ErrorColor} />
-                  </Pressable>
-                </View>
+                {!isEmployee && (
+                  <View style={styles.cardActions}>
+                    <Pressable
+                      style={({ pressed }) => [styles.editButton, pressed && styles.pressed]}
+                      disabled={deletingId === service.id}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/business/management/services/form",
+                          params: {
+                            mode: "edit",
+                            id: service.id,
+                            name: service.name,
+                            description: service.description ?? "",
+                            price: String(service.price),
+                            duration: String(service.durationMinutes),
+                          },
+                        })
+                      }
+                    >
+                      <Ionicons name="create-outline" size={16} color={Colors.BrandPrimary} />
+                    </Pressable>
+                    <Pressable
+                      style={({ pressed }) => [styles.deleteButton, pressed && styles.pressed]}
+                      disabled={deletingId === service.id}
+                      onPress={() => confirmDeleteService(service)}
+                    >
+                      <Ionicons name="trash-outline" size={16} color={Colors.ErrorColor} />
+                    </Pressable>
+                  </View>
+                )}
               </View>
             ))}
           </View>
