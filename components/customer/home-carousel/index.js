@@ -1,21 +1,25 @@
 import React, { memo } from "react";
-import { ImageBackground, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import CustomText from "@/components/high-level/custom-text";
 import CustomTouchableOpacity from "@/components/high-level/custom-touchable-opacity";
 import { Colors } from "@/constants/colors";
 
+const CAROUSEL_URI = "https://lh3.googleusercontent.com/aida-public/AB6AXuCKr5MHDlQ7_urC_f1igIqF9Ezvs8eY8zHja7vgnWpgx69RMd7v0_oyIKFKgJfLpNrvGqXWd4h24L8_2IPakMmSDa_AYc0QUEJgYN4_-BdlgwFOgazBzrXF3rf9LZQ7kksdqZ34X0v-FPiTiUPmj_JvN0SfCrLblGEWiIYX6NC0DhPwIIuzWu3Mf0CjKF8w8rwNggYOgNURKGCz0oonmVjDfG9j1c36UxIw_krny8jhRA5jBoB95MNkc8UVP9X7EJB3YSg4lrJ-tzQ";
+
 const CustomerHomeCarousel = () => {
   return (
     <CustomTouchableOpacity style={styles.card} activeOpacity={0.95}>
-      <ImageBackground
-        source={{
-          uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuCKr5MHDlQ7_urC_f1igIqF9Ezvs8eY8zHja7vgnWpgx69RMd7v0_oyIKFKgJfLpNrvGqXWd4h24L8_2IPakMmSDa_AYc0QUEJgYN4_-BdlgwFOgazBzrXF3rf9LZQ7kksdqZ34X0v-FPiTiUPmj_JvN0SfCrLblGEWiIYX6NC0DhPwIIuzWu3Mf0CjKF8w8rwNggYOgNURKGCz0oonmVjDfG9j1c36UxIw_krny8jhRA5jBoB95MNkc8UVP9X7EJB3YSg4lrJ-tzQ",
-        }}
-        style={styles.image}
-        imageStyle={styles.imageStyle}
-        resizeMode="cover"
-      >
+      <View style={styles.imageWrapper}>
+        <Image
+          source={{ uri: CAROUSEL_URI }}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          transition={300}
+          placeholder={{ color: "#2a2a2a" }}
+          cachePolicy="memory-disk"
+        />
         <View style={styles.overlay} />
         <View style={styles.content}>
           <View style={styles.badge}>
@@ -35,7 +39,7 @@ const CustomerHomeCarousel = () => {
             <Ionicons name="arrow-forward" size={16} color={Colors.BrandGold} />
           </View>
         </View>
-      </ImageBackground>
+      </View>
     </CustomTouchableOpacity>
   );
 };
@@ -49,13 +53,12 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     overflow: "hidden",
   },
-  image: {
+  imageWrapper: {
     width: "100%",
     height: 192,
-    justifyContent: "center",
-  },
-  imageStyle: {
     borderRadius: 24,
+    overflow: "hidden",
+    justifyContent: "center",
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,

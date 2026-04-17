@@ -61,7 +61,10 @@ function AnimatedTabBar({ hidden, ...props }) {
 function CenterActionButton() {
   return (
     <View style={styles.centerButtonOuter}>
-      <Pressable style={styles.centerButton} onPress={() => router.push("/customer/home/business-list")}>
+      <Pressable
+        style={styles.centerButton}
+        onPress={() => router.push({ pathname: "/customer/home/business-list", params: { category: "all" } })}
+      >
         <Ionicons name="add" size={38} color={Colors.White} />
       </Pressable>
     </View>

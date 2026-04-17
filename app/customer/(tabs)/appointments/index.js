@@ -4,7 +4,7 @@ import { Calendar as RNCalendar, LocaleConfig } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
-import { collection, doc, getDocs, orderBy, query, updateDoc, where } from "firebase/firestore";
+import { collection, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
 import { auth, db } from "@/firebase";
 import useAuthStore from "@/store/auth-store";
 import LayoutView from "@/components/high-level/layout-view";
@@ -76,8 +76,7 @@ export default function CustomerRandevular() {
 
     const q = query(
       collection(db, "appointments"),
-      where("customerId", "==", customerId),
-      orderBy("date", "asc")
+      where("customerId", "==", customerId)
     );
     getDocs(q)
       .then((snap) => {

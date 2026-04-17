@@ -256,11 +256,18 @@ const CreateAppointment = () => {
     try {
       const dateStr = selectedDate.dateStr;
 
+      const customerSnap = await getDoc(doc(db, "users", customerId));
+      const customerData = customerSnap.exists() ? customerSnap.data() : {};
+      const customerName = customerData.name ?? "";
+      const customerPhone = customerData.phone ?? "";
+
       const appointmentRef = doc(collection(db, "appointments"));
 
       const appointmentData = {
         businessId,
         customerId,
+        customerName,
+        customerPhone,
         serviceIds: incomingServiceIds,
         employeeIds: selectedEmployeeIds,
         date: dateStr,

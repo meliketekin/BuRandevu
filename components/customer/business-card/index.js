@@ -1,5 +1,6 @@
 import React, { memo } from "react";
-import { Image, StyleSheet, View } from "react-native";
+import { Image } from "expo-image";
+import { StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import CustomButton from "@/components/high-level/custom-button";
 import CustomText from "@/components/high-level/custom-text";
@@ -9,7 +10,18 @@ const CustomerBusinessCard = ({ item, onBookPress }) => {
   return (
     <View style={styles.card}>
       <View style={styles.imageWrapper}>
-        <Image source={{ uri: item.imageUri }} style={styles.coverImage} resizeMode="cover" />
+        {item.imageUri ? (
+          <Image
+            source={{ uri: item.imageUri }}
+            style={styles.coverImage}
+            contentFit="cover"
+            transition={200}
+            placeholder={{ color: "#F0F0F0" }}
+            cachePolicy="memory-disk"
+          />
+        ) : (
+          <View style={[styles.coverImage, styles.imagePlaceholder]} />
+        )}
 
         <View style={styles.ratingBadge}>
           <Ionicons name="star" size={14} color={Colors.BrandGold} />
@@ -41,6 +53,8 @@ const CustomerBusinessCard = ({ item, onBookPress }) => {
                 key={`${item.id}-staff-${index}`}
                 source={{ uri: avatarUri }}
                 style={[styles.avatar, index > 0 && styles.avatarOverlap]}
+                contentFit="cover"
+                cachePolicy="memory-disk"
               />
             ))}
           </View>

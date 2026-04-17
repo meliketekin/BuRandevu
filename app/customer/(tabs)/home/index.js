@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { ImageBackground, View, StyleSheet, ScrollView, StatusBar } from "react-native";
+import { Image } from "expo-image";
+import { View, StyleSheet, ScrollView, StatusBar } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { collection, getDocs } from "firebase/firestore";
@@ -14,8 +15,7 @@ import CustomTouchableOpacity from "@/components/high-level/custom-touchable-opa
 import CustomerHomeCarousel from "@/components/customer/home-carousel";
 import CustomerCategoryGrid from "@/components/customer/category-grid";
 import CustomerPopularNearYou from "@/components/customer/popular-near-you";
-
-const BG = require("@/assets/bg.png");
+import { normalizeBusinessCategory } from "@/enums/business-category-enum";
 
 export default function CustomerAnaSayfa() {
   const insets = useSafeAreaInsets();
@@ -29,21 +29,19 @@ export default function CustomerAnaSayfa() {
     getDocs(collection(db, "businesses"))
       .then((snap) => {
         const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        console.log(docs);
         setBusinesses(docs);
-      })
-      .catch((error) => {
-        console.log("error", error);
+        const uris = docs.map((d) => d.venuePhotos?.[0] ?? d.servicePhotos?.[0]).filter(Boolean);
+        if (uris.length) Image.prefetch(uris);
       })
       .finally(() => setLoadingBusinesses(false));
   }, []);
 
-  const handleCategoryPress = (id) => {
-    router.push("/customer/home/business-list");
+  const handleCategoryPress = (categoryId) => {
+    router.push({ pathname: "/customer/home/business-list", params: { category: categoryId } });
   };
 
   const handleViewAllPress = () => {
-    router.push("/customer/home/business-list");
+    router.push({ pathname: "/customer/home/business-list", params: { category: "all" } });
   };
 
   const handlePopularItemPress = (id) => {
@@ -51,26 +49,27 @@ export default function CustomerAnaSayfa() {
   };
 
   const categoryCounts = businesses.reduce((acc, b) => {
-    if (b.category) acc[b.category] = (acc[b.category] ?? 0) + 1;
+    const cat = normalizeBusinessCategory(b.category ?? "");
+    if (cat) acc[cat] = (acc[cat] ?? 0) + 1;
     return acc;
   }, {});
 
   const header = (
-    <ImageBackground source={BG} style={[styles.headerBg, { paddingTop: insets.top + 10 }]} resizeMode="cover">
-      <StatusBar barStyle="light-content" />
+    <View style={[styles.headerBg, { paddingTop: insets.top + 10 }]}>
+      <StatusBar barStyle="dark-content" />
       <View style={styles.headerTitle}>
         <CustomTouchableOpacity onPress={openDrawerMenu} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-          <Ionicons name="menu" size={26} color={Colors.White} />
+          <Ionicons name="menu" size={26} color={Colors.BrandPrimary} />
         </CustomTouchableOpacity>
         <View style={styles.headerLogoRow}>
           <CustomImage uri={require("@/assets/logo1.png")} isLocalFile style={styles.headerLogo} contentFit="contain" />
-          <CustomText color={Colors.White} semibold lg>
+          <CustomText color={Colors.BrandPrimary} semibold lg>
             BuRandevu
           </CustomText>
         </View>
         <View style={styles.headerRight} />
       </View>
-    </ImageBackground>
+    </View>
   );
 
   return (
@@ -88,6 +87,9 @@ const styles = StyleSheet.create({
   headerBg: {
     paddingHorizontal: 20,
     paddingBottom: 22,
+    backgroundColor: Colors.Background,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(20,20,20,0.08)",
   },
   headerTitle: {
     flexDirection: "row",

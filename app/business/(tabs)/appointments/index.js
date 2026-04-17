@@ -1,16 +1,19 @@
-import { useState, useCallback, useMemo } from "react";
-import { View, StyleSheet, ScrollView, Pressable, Modal, useWindowDimensions } from "react-native";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { View, StyleSheet, ScrollView, Pressable, Modal, useWindowDimensions, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db, auth } from "@/firebase";
+import useAuthStore from "@/store/auth-store";
 import LayoutView from "@/components/high-level/layout-view";
 import { Ionicons } from "@expo/vector-icons";
 import CustomText from "@/components/high-level/custom-text";
 import CustomImage from "@/components/high-level/custom-image";
 import { Colors } from "@/constants/colors";
-import useUserType from "@/hooks/use-user-type";
+import { APPOINTMENT_STATUS_CONFIG, AppointmentStatusEnum } from "@/enums/appointment-status-enum";
+import general from "@/utils/general";
 
 const TERTIARY = "#735C00";
 const TERTIARY_CONTAINER = "#CCA830";
-const ON_TERTIARY_CONTAINER = "#4F3E00";
 const SURFACE_HIGH = "#E8E8E8";
 const ERROR_CONTAINER = "#FFDAD6";
 const ON_ERROR_CONTAINER = "#93000A";
@@ -26,173 +29,155 @@ const PALETTE = {
 };
 
 const DATE_FILTER_OPTIONS = ["Bugün", "Yarın", "Bu hafta"];
-const EMPLOYEE_OPTIONS = ["Tümü", "Murat Atasoy", "Ayşe Kaya", "Elif Şahin"];
 
-const UPCOMING_APPOINTMENTS = [
-  {
-    id: "1",
-    name: "Caner Yıldız",
-    service: "Sakal Tasarımı",
-    time: "10:30",
-    status: "confirmed",
-    showActiveDot: true,
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuC-qgcuI7i344wfmRMwtLho875ffrjvQnSUVrCMN6Iw9MO0gYrKLPRhk0kuayg4KG2eNNcuMSYzjNwDumWPKq7WfmJgxMqjPJoq_x91OvzYAzSHuRB9ZGgmG66i9j3cI5y7myqdaXy6ceGO_THziiQJEv8p7bvXJ8MlFXtF8_F_qQarTLNut7ahRxkE4K0X1gRbf0f7Iv7TtzTD1UAutqNY6pjSLT9pL_xNvmNNQVoWuwE8i3eOmOvY7mz_M5mgY-w78OYmasVMgso",
-    expert: "Murat Atasoy",
-    price: "₺450,00",
-  },
-  {
-    id: "2",
-    name: "Merve Demir",
-    service: "Cilt Bakımı",
-    time: "11:45",
-    status: "pending",
-    showActiveDot: false,
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCtOE8kOOLSxi0YhaNL4yhBZdlHCnHduBOsOP856xHC9y_TIiTo2NeKsQXQVG09yT-9gpPuT06wrI1fpxBriVP67f9Wg5mfrmc9FJhMAK3-7qwa5R-m7wQPIZ6Qfvb5mus9h8PimRmEcoTxpEIosLAMaRyrbZnlGPqbgtIli7us8S1CstqVsYaDB4JGFmQyXJ9Itiokch6oRXu5W28Syk3JpBBlZGlcnK-MvhFzy6hlTL58KHrOlTP4Y7gfGIGbigY0y1Jt5b98nOM",
-    expert: "Ayşe Kaya",
-    price: "₺680,00",
-  },
-  {
-    id: "3",
-    name: "Ahmet Ak",
-    service: "Saç Kesimi",
-    time: "14:00",
-    status: "confirmed",
-    showActiveDot: false,
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDJgPLMaj7HlwYLp7lN9ikAT5N7Nd_o2XLeLasPq2b1DiEi6ce2whHxqvnHFiWZFw941_ASwjRs1-hKuCzYDkb2uy_jwGZUTptcrGRnIJPW21XQ4KScBoTHl4hhxoC_2QK6VojE4SGgnKCmM0icXcG-jFwyBjXK0tbVsqc8EpbYvuyHkVO9H5k-8wfjNPNXfVTZHLM89phpjumw31oL8OOULPZTu9tmn482DtmdHrVOiaHwXe0yQC778Oi2COi4ORAA_-LcoT-fplQ",
-    expert: "Murat Atasoy",
-    price: "₺320,00",
-  },
-  {
-    id: "4",
-    name: "Selin Yılmaz",
-    service: "Saç Boyama",
-    time: "15:30",
-    status: "confirmed",
-    showActiveDot: false,
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBpRni3HgJ9ExBzXRnjQeNDOEEVxa0fpJnUusuxbk1v3vPq_Q4hEz1Ob4NzduLHtUW_aS0gG3xmPSre4tAaKdFurhQjdeu_s-IqgOITasQzt5qgDNl3vK7IVRtUVRmZ9BVkhKr5lLCXyuL4-HhmQqX2tKe0avRODW-7aWbUic8t5272_IFw2cRH8RN6nhbY_dZg19Fznnvy2sgTORkjKenbxVLzYCYoTEpOjqvJDNBAoeIx9q5bCCfsz-mi8Kvaq3wX29Upkf6mH4Q",
-    expert: "Elif Şahin",
-    price: "₺1.200,00",
-  },
-];
+function getDateStrings() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = today.toLocaleDateString("sv");
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toLocaleDateString("sv");
+  const weekEnd = new Date(today);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  const weekEndStr = weekEnd.toLocaleDateString("sv");
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toLocaleDateString("sv");
+  return { todayStr, tomorrowStr, weekEndStr, yesterdayStr };
+}
 
-const PAST_APPOINTMENTS = [
-  {
-    id: "p1",
-    name: "Ozan Kurt",
-    service: "Saç & Sakal",
-    time: "16:00",
-    status: "confirmed",
-    showActiveDot: false,
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCWtK62fM0gljowf5MWovVCt_CaqDMtmIaDA1L7OPURppJd_q-egCapwlKYJuahViLF0X4CZUmdUlAZ5bAgcfAw5Q9kEBXITCN-w80w_9jekI1LFYfREIJ5ZWfy5GA_HJ_H8wsr8NzYTK1-QB8QIvZUJ6YHsUjxk1c4HE0QgofuRY7VP3IvY8bBt6-p019B4PGdkEbMwfFhU3C5MmvuMU_1r9afUhmlbFiFezZFampFKguSt7FJuHnHONckhO82cNtfWsp7r4MKF2k",
-    expert: "Murat Atasoy",
-    price: "₺380,00",
-    completedDay: "Dün",
-  },
-  {
-    id: "p2",
-    name: "Deniz Arslan",
-    service: "Cilt Bakımı",
-    time: "11:00",
-    status: "confirmed",
-    showActiveDot: false,
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuB5cFMAd99Go-AbrQy68MTiNXS5bxSFyMPCYfnO6VU2uUeFVKPXW3ydoleJoSOpeeqYzJEDac6U93HoNYgLukep7RAOq068cJACv8w52yqWi2fntN35DnI1yXbctyEmQpGvF5EtRXnEIJ3W4ex5ApmaEZ7hLkrIh8f2VJDCYNxLKmCPaEVCsjzBmZgSYEnNjnj54bwSoZqClpxqk5zBCUqpJMq4HV8NB-fGQ1eTL8aQoS0z-NFINJbZ4_8yw1-0iPQNrMYhIocGPs8",
-    expert: "Ayşe Kaya",
-    price: "₺520,00",
-    completedDay: "Dün",
-  },
-  {
-    id: "p3",
-    name: "Cem Yücel",
-    service: "Klasik Tıraş",
-    time: "09:30",
-    status: "confirmed",
-    showActiveDot: false,
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuD4c0XEUq-Q1S_EUfk5iy291p53yD_mo37wZ2y86Ibb42y-1T0tKoJA5KuWZqM1cqYfYFQZZlN6RX9YdCGljy53fvFteLj5Cqul4qJQ6wpTMoo7qVarDOglCzK0G2SHvMU5lQXWlvUz8jPZOXpdWJdoFVDwxaeduP8_1qar_B5mXfn3UR7OxoyGgGNTMOOKKjR9ujCnVtJ0HE-KqagUJr55O1ZiJaz43u1-sJboelic_MqNbl4Ifrvf6cwdg4JkOhnUp6RE6pgZ1as",
-    expert: "Murat Atasoy",
-    price: "₺290,00",
-    completedDay: "2 gün önce",
-  },
-];
+function formatCompletedDay(dateStr) {
+  if (!dateStr) return null;
+  const { yesterdayStr } = getDateStrings();
+  if (dateStr === yesterdayStr) return "Dün";
+  const d = new Date(dateStr);
+  const diffMs = Date.now() - d.getTime();
+  const diffDays = Math.floor(diffMs / 86400000);
+  if (diffDays > 0 && diffDays < 30) return `${diffDays} gün önce`;
+  return d.toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
+}
 
-function filterByEmployee(list, employee) {
-  if (!employee || employee === "Tümü") return list;
-  return list.filter((item) => item.expert === employee);
+function filterByEmployeeUid(list, employeeUid) {
+  if (!employeeUid) return list;
+  return list.filter((item) => Object.values(item.employeeIds ?? {}).includes(employeeUid));
 }
 
 function filterUpcomingByDate(list, dateFilter) {
-  if (dateFilter === "Bugün") return list;
-  if (dateFilter === "Yarın") return list.filter((item) => ["2", "3", "4"].includes(item.id));
+  const { todayStr, tomorrowStr, weekEndStr } = getDateStrings();
+  if (dateFilter === "Bugün") return list.filter((a) => a.date === todayStr);
+  if (dateFilter === "Yarın") return list.filter((a) => a.date === tomorrowStr);
+  if (dateFilter === "Bu hafta") return list.filter((a) => a.date >= todayStr && a.date <= weekEndStr);
   return list;
 }
 
-function StatusBadge({ status }) {
-  const isConfirmed = status === "confirmed";
-  return (
-    <View style={[styles.statusPill, isConfirmed ? styles.statusConfirmed : styles.statusPending]}>
-      <CustomText min bold color={isConfirmed ? ON_TERTIARY_CONTAINER : Colors.LightGray2}>
-        {isConfirmed ? "Onaylandı" : "Beklemede"}
-      </CustomText>
-    </View>
-  );
+function appointmentStatusCfg(status) {
+  return APPOINTMENT_STATUS_CONFIG[status] ?? APPOINTMENT_STATUS_CONFIG[AppointmentStatusEnum.Pending];
 }
 
 export default function Appointments() {
   const insets = useSafeAreaInsets();
   const { height: windowH } = useWindowDimensions();
-  const { isEmployee } = useUserType();
+
+  const isAdmin = useAuthStore((s) => s.isAdmin);
+  const userType = useAuthStore((s) => s.userType);
+  const storedBusinessId = useAuthStore((s) => s.businessId);
+  const isEmployee = userType === "business" && !isAdmin;
+  const currentUid = auth.currentUser?.uid;
+  const bizId = isEmployee ? storedBusinessId : currentUid;
+
+  const [appointments, setAppointments] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const [selected, setSelected] = useState(null);
   const [periodTab, setPeriodTab] = useState("upcoming");
   const [dateFilter, setDateFilter] = useState("Bugün");
-  const [employeeFilter, setEmployeeFilter] = useState("Tümü");
+  const [employeeFilter, setEmployeeFilter] = useState(null);
   const [sortLabel, setSortLabel] = useState("En yakın saat");
   const [pickerKind, setPickerKind] = useState(null);
 
   const closeSheet = useCallback(() => setSelected(null), []);
   const closePicker = useCallback(() => setPickerKind(null), []);
 
+  useEffect(() => {
+    if (!bizId) { setLoading(false); return; }
+
+    const fetchData = async () => {
+      try {
+        const [apptSnap, empSnap] = await Promise.all([
+          getDocs(query(collection(db, "appointments"), where("businessId", "==", bizId))),
+          !isEmployee ? getDocs(collection(db, "businesses", bizId, "employees")) : Promise.resolve(null),
+        ]);
+
+        const items = apptSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+        const enriched = items.map((a) => ({
+          ...a,
+          customerName: a.customerName || "Müşteri",
+          expertName: Object.values(a.employeeNames ?? {})[0] ?? "—",
+          serviceName: (a.serviceNames ?? []).join(", "),
+          formattedPrice: `₺${Number(a.totalPrice ?? 0).toLocaleString("tr-TR")}`,
+        }));
+
+        setAppointments(enriched);
+        if (empSnap) {
+          setEmployees(empSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [bizId, isEmployee]);
+
+  const { todayStr } = getDateStrings();
+
+  const employeeOptions = useMemo(() => [
+    { id: null, name: "Tümü" },
+    ...employees.map((e) => ({ id: e.id, name: e.name })),
+  ], [employees]);
+
+  const upcomingBase = useMemo(() => {
+    let list = appointments.filter((a) => (a.date ?? "") >= todayStr && !["cancelled", "rejected"].includes(a.status));
+    if (isEmployee) list = list.filter((a) => Object.values(a.employeeIds ?? {}).includes(currentUid));
+    return list;
+  }, [appointments, isEmployee, currentUid, todayStr]);
+
+  const pastBase = useMemo(() => {
+    let list = appointments.filter((a) => (a.date ?? "") < todayStr);
+    if (isEmployee) list = list.filter((a) => Object.values(a.employeeIds ?? {}).includes(currentUid));
+    return list;
+  }, [appointments, isEmployee, currentUid, todayStr]);
+
   const filteredAppointments = useMemo(() => {
-    const base = periodTab === "upcoming" ? UPCOMING_APPOINTMENTS : PAST_APPOINTMENTS;
-    let list = filterByEmployee(base, employeeFilter);
-    if (periodTab === "upcoming") {
-      list = filterUpcomingByDate(list, dateFilter);
-    }
+    const base = periodTab === "upcoming" ? upcomingBase : pastBase;
+    let list = !isEmployee ? filterByEmployeeUid(base, employeeFilter) : base;
+    if (periodTab === "upcoming") list = filterUpcomingByDate(list, dateFilter);
     if (sortLabel === "Ada göre") {
-      list = [...list].sort((a, b) => a.name.localeCompare(b.name, "tr"));
+      list = [...list].sort((a, b) => (a.customerName ?? "").localeCompare(b.customerName ?? "", "tr"));
     } else {
-      list = [...list].sort((a, b) => a.time.localeCompare(b.time));
+      list = [...list].sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
     }
     return list;
-  }, [periodTab, employeeFilter, dateFilter, sortLabel]);
+  }, [periodTab, upcomingBase, pastBase, isEmployee, employeeFilter, dateFilter, sortLabel]);
 
-  const subtitleText = useMemo(() => {
-    if (periodTab === "past") {
-      if (!filteredAppointments.length) {
-        return "Bu filtrelere uygun geçmiş randevu bulunmuyor.";
-      }
-      return `Son dönemde ${filteredAppointments.length} tamamlanan randevu listeleniyor.`;
-    }
-    if (!filteredAppointments.length) {
-      return `${dateFilter} için bu filtrelere uygun yaklaşan randevu yok.`;
-    }
-    return `${dateFilter} için ${filteredAppointments.length} yaklaşan randevunuz bulunuyor.`;
-  }, [periodTab, filteredAppointments.length, dateFilter]);
+  const selectedEmployeeName = useMemo(() => {
+    if (!employeeFilter) return "Tümü";
+    return employeeOptions.find((e) => e.id === employeeFilter)?.name ?? "Tümü";
+  }, [employeeFilter, employeeOptions]);
+
+  if (loading) {
+    return (
+      <LayoutView isActiveHeader={true} title="Randevular" backgroundColor={PALETTE.bg} paddingHorizontal={0}>
+        <ActivityIndicator size="large" color={Colors.Gold} style={{ marginTop: 80 }} />
+      </LayoutView>
+    );
+  }
 
   return (
     <LayoutView isActiveHeader={true} title="Randevular" backgroundColor={PALETTE.bg} paddingHorizontal={0}>
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]} showsVerticalScrollIndicator={false}>
-        <View style={styles.sectionIntro}>
-          <CustomText sm color={PALETTE.muted} style={styles.pageSubtitle}>
-            {subtitleText}
-          </CustomText>
-        </View>
-
         <View style={styles.periodSegmentCard}>
           <View style={styles.periodSegment}>
             <Pressable style={({ pressed }) => [styles.periodTabBtn, periodTab === "upcoming" && styles.periodTabBtnActive, pressed && styles.pressed]} onPress={() => setPeriodTab("upcoming")}>
@@ -232,17 +217,26 @@ export default function Appointments() {
                   Çalışan
                 </CustomText>
                 <CustomText minx color={PALETTE.muted} numberOfLines={1}>
-                  {employeeFilter}
+                  {selectedEmployeeName}
                 </CustomText>
               </View>
               <Ionicons name="chevron-down" size={16} color={Colors.LightGray2} />
             </Pressable>
           )}
 
-          <Pressable style={({ pressed }) => [styles.tuneFab, pressed && styles.pressed]} onPress={() => setPickerKind("tune")}>
-            <Ionicons name="options-outline" size={22} color={Colors.White} />
+          <Pressable style={({ pressed }) => [styles.sortBtn, pressed && styles.pressed]} onPress={() => setPickerKind("tune")}>
+            <Ionicons name="swap-vertical-outline" size={20} color={Colors.BrandPrimary} />
+            <CustomText min bold color={Colors.BrandPrimary}>
+              {sortLabel}
+            </CustomText>
           </Pressable>
         </ScrollView>
+
+        <View style={styles.countRow}>
+          <CustomText sm semibold color={PALETTE.muted}>
+            {filteredAppointments.length} randevu
+          </CustomText>
+        </View>
 
         <View style={styles.list}>
           {filteredAppointments.length === 0 ? (
@@ -258,24 +252,33 @@ export default function Appointments() {
               </CustomText>
             </View>
           ) : (
-            filteredAppointments.map((item) => (
+            filteredAppointments.map((item) => {
+              const statusCfg = appointmentStatusCfg(item.status);
+              return (
               <Pressable key={item.id} style={({ pressed }) => [styles.card, pressed && styles.cardPressed]} onPress={() => setSelected(item)}>
                 <View style={styles.cardRow}>
                   <View style={styles.cardLeft}>
                     <View style={styles.avatarWrap}>
-                      <CustomImage uri={item.image} style={styles.avatar} contentFit="cover" />
-                      {item.showActiveDot ? <View style={styles.activeDot} /> : null}
+                      {item.customerPhotoUrl ? (
+                        <CustomImage uri={item.customerPhotoUrl} style={styles.avatar} contentFit="cover" />
+                      ) : (
+                        <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                          <CustomText sm bold color={Colors.BrandPrimary}>
+                            {general.getInitials(item.customerName) || "M"}
+                          </CustomText>
+                        </View>
+                      )}
                     </View>
                     <View style={styles.cardTexts}>
                       <CustomText bold md color={Colors.BrandPrimary}>
-                        {item.name}
+                        {item.customerName}
                       </CustomText>
                       <CustomText xs semibold color={TERTIARY} style={styles.serviceLabel}>
-                        {item.service.toUpperCase()}
+                        {(item.serviceName ?? "").toUpperCase()}
                       </CustomText>
-                      {item.completedDay ? (
+                      {periodTab === "past" && item.date ? (
                         <CustomText minx color={PALETTE.muted} style={styles.pastMeta}>
-                          {item.completedDay}
+                          {formatCompletedDay(item.date)}
                         </CustomText>
                       ) : null}
                     </View>
@@ -284,11 +287,17 @@ export default function Appointments() {
                     <CustomText bold lg color={Colors.BrandPrimary}>
                       {item.time}
                     </CustomText>
-                    <StatusBadge status={item.status} />
+                    <View style={[styles.statusBadge, { backgroundColor: `${statusCfg.color}22` }]}>
+                      <View style={[styles.statusDot, { backgroundColor: statusCfg.color }]} />
+                      <CustomText xs semibold color={statusCfg.color}>
+                        {statusCfg.label}
+                      </CustomText>
+                    </View>
                   </View>
                 </View>
               </Pressable>
-            ))
+            );
+            })
           )}
         </View>
       </ScrollView>
@@ -325,10 +334,26 @@ export default function Appointments() {
                 <View style={styles.detailRows}>
                   <View style={styles.detailRow}>
                     <CustomText sm medium color={Colors.LightGray2}>
+                      Durum
+                    </CustomText>
+                    {(() => {
+                      const sc = appointmentStatusCfg(selected.status);
+                      return (
+                        <View style={[styles.statusBadge, { backgroundColor: `${sc.color}22` }]}>
+                          <View style={[styles.statusDot, { backgroundColor: sc.color }]} />
+                          <CustomText xs semibold color={sc.color}>
+                            {sc.label}
+                          </CustomText>
+                        </View>
+                      );
+                    })()}
+                  </View>
+                  <View style={styles.detailRow}>
+                    <CustomText sm medium color={Colors.LightGray2}>
                       Müşteri
                     </CustomText>
                     <CustomText bold md color={Colors.BrandPrimary}>
-                      {selected.name}
+                      {selected.customerName}
                     </CustomText>
                   </View>
                   <View style={styles.detailRow}>
@@ -336,7 +361,7 @@ export default function Appointments() {
                       Hizmet
                     </CustomText>
                     <CustomText bold md color={Colors.BrandPrimary}>
-                      {selected.service}
+                      {selected.serviceName}
                     </CustomText>
                   </View>
                   <View style={styles.detailRow}>
@@ -344,7 +369,7 @@ export default function Appointments() {
                       Uzman
                     </CustomText>
                     <CustomText bold md color={Colors.BrandPrimary}>
-                      {selected.expert}
+                      {selected.expertName}
                     </CustomText>
                   </View>
                   <View style={[styles.detailRow, styles.detailRowLast]}>
@@ -352,7 +377,7 @@ export default function Appointments() {
                       Ücret
                     </CustomText>
                     <CustomText extraBold fontSize={26} color={TERTIARY}>
-                      {selected.price}
+                      {selected.formattedPrice}
                     </CustomText>
                   </View>
                 </View>
@@ -414,19 +439,19 @@ export default function Appointments() {
                 : null}
 
               {pickerKind === "employee"
-                ? EMPLOYEE_OPTIONS.map((opt) => (
+                ? employeeOptions.map((opt) => (
                     <Pressable
-                      key={opt}
-                      style={({ pressed }) => [styles.pickerRow, employeeFilter === opt && styles.pickerRowActive, pressed && styles.pressed]}
+                      key={opt.id ?? "all"}
+                      style={({ pressed }) => [styles.pickerRow, employeeFilter === opt.id && styles.pickerRowActive, pressed && styles.pressed]}
                       onPress={() => {
-                        setEmployeeFilter(opt);
+                        setEmployeeFilter(opt.id);
                         closePicker();
                       }}
                     >
                       <CustomText semibold md color={Colors.BrandPrimary}>
-                        {opt}
+                        {opt.name}
                       </CustomText>
-                      {employeeFilter === opt ? <Ionicons name="checkmark-circle" size={22} color={Colors.Gold} /> : null}
+                      {employeeFilter === opt.id ? <Ionicons name="checkmark-circle" size={22} color={Colors.Gold} /> : null}
                     </Pressable>
                   ))
                 : null}
@@ -500,16 +525,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 8,
   },
-  sectionIntro: {
-    marginBottom: 20,
-  },
-  pageTitle: {
-    letterSpacing: -0.8,
-    marginBottom: 6,
-  },
-  pageSubtitle: {
-    lineHeight: 22,
-  },
   periodSegmentCard: {
     backgroundColor: PALETTE.surface,
     borderRadius: 16,
@@ -574,18 +589,25 @@ const styles = StyleSheet.create({
     minWidth: 72,
     gap: 2,
   },
-  tuneFab: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.Black,
+  sortBtn: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 999,
+    backgroundColor: PALETTE.surface,
+    borderWidth: 1,
+    borderColor: PALETTE.border,
     shadowColor: Colors.Black,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
     shadowRadius: 10,
-    elevation: 5,
+    elevation: 2,
+  },
+  countRow: {
+    marginBottom: 12,
+    paddingHorizontal: 2,
   },
   list: {
     gap: 16,
@@ -656,6 +678,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(196, 199, 199, 0.35)",
   },
+  avatarPlaceholder: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F2F2F2",
+  },
   activeDot: {
     position: "absolute",
     bottom: 0,
@@ -678,16 +705,18 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     gap: 8,
   },
-  statusPill: {
-    paddingHorizontal: 12,
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 999,
   },
-  statusConfirmed: {
-    backgroundColor: TERTIARY_CONTAINER,
-  },
-  statusPending: {
-    backgroundColor: SURFACE_HIGH,
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
   },
   modalRoot: {
     flex: 1,
