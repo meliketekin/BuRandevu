@@ -160,12 +160,12 @@ export default function ServiceForm() {
             </View>
             <View style={styles.heroTextWrap}>
               <CustomText extraBold fontSize={20} color={Colors.BrandPrimary}>
-                {isEditMode ? "Hizmeti Duzenle" : "Yeni Hizmet"}
+                {isEditMode ? "Hizmeti Düzenle" : "Yeni Hizmet"}
               </CustomText>
               <CustomText medium fontSize={13} color={Colors.LightGray2} style={styles.heroDescription}>
                 {isEditMode
-                  ? "Hizmet adi, aciklama, fiyat ve sure alanlarini guncelleyerek hizmet bilgisini duzenle."
-                  : "Hizmet adi, aciklama, fiyat ve sure bilgisini ekleyerek yeni bir hizmet taslagi olustur."}
+                  ? "Hizmet adı, açıklama, fiyat ve süre alanlarını güncelleyerek hizmet bilgisini düzenle."
+                  : "Hizmet adı, açıklama, fiyat ve süre bilgisini ekleyerek yeni bir hizmet taslağı oluştur."}
               </CustomText>
             </View>
           </View>
@@ -197,7 +197,7 @@ export default function ServiceForm() {
               <View style={styles.featureCardTop}>
                 <View>
                   <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={1.1}>
-                    HIZMET FIYATI
+                    HİZMET FİYATI
                   </CustomText>
                   <CustomText extraBold fontSize={18} color={Colors.BrandPrimary} style={styles.featureValue}>
                     {price || "₺0"}
@@ -229,7 +229,7 @@ export default function ServiceForm() {
               <View style={styles.durationTopRow}>
                 <View>
                   <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={1.1}>
-                    SEANS SURESI
+                    SEANS SÜRESİ
                   </CustomText>
                   <CustomText extraBold fontSize={22} color={Colors.BrandPrimary} style={styles.featureValue}>
                     {duration} Dakika
@@ -238,7 +238,7 @@ export default function ServiceForm() {
                 <View style={styles.durationPill}>
                   <Ionicons name="flash-outline" size={14} color={Colors.Gold} />
                   <CustomText bold fontSize={10} color={Colors.Gold} letterSpacing={0.8}>
-                    HIZLI SECIM
+                    HIZLI SEÇİM
                   </CustomText>
                 </View>
               </View>
@@ -256,7 +256,7 @@ export default function ServiceForm() {
 
                 <View style={styles.stepperValue}>
                   <CustomText bold fontSize={10} color={Colors.LightGray2} letterSpacing={1.1}>
-                    OZEL SURE
+                    ÖZEL SÜRE
                   </CustomText>
                   <CustomText extraBold fontSize={18} color={Colors.BrandPrimary}>
                     {duration} DK

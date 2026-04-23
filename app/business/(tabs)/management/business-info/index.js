@@ -19,6 +19,8 @@ import SocialLinksEditor from "@/components/high-level/social-links-editor";
 import { Colors } from "@/constants/colors";
 import { BUSINESS_CATEGORIES, normalizeBusinessCategory } from "@/enums/business-category-enum";
 import { CloudinaryConfig } from "@/config/app-config";
+import Validator from "@/infrastructures/validation";
+import useReRender from "@/hooks/use-re-render";
 
 const SUCCESS_MESSAGE_DURATION = 2400;
 
@@ -51,6 +53,8 @@ const INITIAL_FORM = buildFormState();
 
 export default function EditBusinessInfoForm() {
   const navigation = useNavigation();
+  const [validator] = useState(() => new Validator());
+  const reRender = useReRender();
   const [form, setForm] = useState(INITIAL_FORM);
   const [isSaving, setIsSaving] = useState(false);
   const [pendingDeleteIds, setPendingDeleteIds] = useState([]);
@@ -146,6 +150,9 @@ export default function EditBusinessInfoForm() {
   );
 
   const handleSave = useCallback(async () => {
+    reRender();
+    if (!validator.allValid()) return;
+
     const uid = auth.currentUser?.uid;
     if (!uid) {
       CommandBus.sc.alertError("Hata", "Kullanıcı bulunamadı.", 2600);
@@ -217,7 +224,7 @@ export default function EditBusinessInfoForm() {
     } finally {
       setIsSaving(false);
     }
-  }, [form, pendingDeleteIds, uploadPhoto]);
+  }, [form, pendingDeleteIds, uploadPhoto, validator, reRender]);
 
   const handleAttemptLeave = useCallback(
     (action) => {
@@ -275,12 +282,21 @@ export default function EditBusinessInfoForm() {
         {/* Temel bilgiler */}
         <View style={styles.section}>
           <View style={styles.fieldsStack}>
-            <FormInput label="İşletme adı" value={form.businessName} onChangeText={(v) => setField("businessName", v)} required style={styles.input} />
+            <FormInput
+              label="İşletme adı"
+              value={form.businessName}
+              onChangeText={(v) => setField("businessName", v)}
+              required
+              style={styles.input}
+              error={validator.registerDestructuring({ name: "businessName", value: form.businessName, rules: [{ rule: "required" }], validatorScopeKey: validator.scopeKey })}
+            />
             <FormInput label="Açıklama" value={form.description} onChangeText={(v) => setField("description", v)} multiline style={styles.input} />
             <CustomSelect
               label="Kategori"
+              required
               value={form.category}
               style={styles.input}
+              error={validator.registerDestructuring({ name: "category", value: form.category, rules: [{ rule: "required" }], validatorScopeKey: validator.scopeKey })}
               selectModalProps={{
                 title: "Kategori seç",
                 items: BUSINESS_CATEGORIES,
@@ -290,7 +306,15 @@ export default function EditBusinessInfoForm() {
                 onClear: () => setField("category", ""),
               }}
             />
-            <FormInput label="Telefon numarası" value={form.phone} onChangeText={(v) => setField("phone", v)} required keyboardType="phone-pad" style={styles.input} />
+            <FormInput
+              label="Telefon numarası"
+              value={form.phone}
+              onChangeText={(v) => setField("phone", v)}
+              required
+              keyboardType="phone-pad"
+              style={styles.input}
+              error={validator.registerDestructuring({ name: "phone", value: form.phone, rules: [{ rule: "required" }, { rule: "isPhone" }], validatorScopeKey: validator.scopeKey })}
+            />
             <FormInput label="WhatsApp numarası" value={form.whatsappNumber} onChangeText={(v) => setField("whatsappNumber", v)} keyboardType="phone-pad" style={styles.input} />
             <SocialLinksEditor links={form.socialLinks} onChange={(links) => setField("socialLinks", links)} />
           </View>

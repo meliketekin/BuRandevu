@@ -405,7 +405,7 @@ export default function WorkingHours() {
     const newDates = selectedDates.filter((dateId) => !existingDateSet.has(dateId));
 
     if (newDates.length === 0) {
-      CommandBus.sc.alertInfo("Zaten ekli", "Sectigin tarih zaten ozel gun olarak ekli. Duzenlemek icin alttaki karti kullanabilirsin.", 2800);
+      CommandBus.sc.alertInfo("Zaten ekli", "Seçtiğin tarih zaten özel gün olarak ekli. Düzenlemek için alttaki kartı kullanabilirsin.", 2800);
       return;
     }
 
@@ -424,7 +424,7 @@ export default function WorkingHours() {
     setCalendarVisible(false);
 
     if (alreadyAddedDates.length > 0) {
-      CommandBus.sc.alertInfo("Bazi tarihler atlandi", `${alreadyAddedDates.length} tarih zaten ozel gun olarak kayitliydi. Yeni tarihleri ekledim.`, 3000);
+      CommandBus.sc.alertInfo("Bazı tarihler atlandı", `${alreadyAddedDates.length} tarih zaten özel gün olarak kayıtlıydı. Yeni tarihleri ekledim.`, 3000);
     }
   }, [hours, pendingSelectedDates, pendingSpecialDayName, specialDays]);
 
@@ -445,12 +445,12 @@ export default function WorkingHours() {
   const findInvalidRange = useCallback(() => {
     const regularInvalid = hours.find((item) => item.enabled && validateTimeSelection({ start: item.start, end: item.end, field: "end", nextValue: item.end }));
     if (regularInvalid) {
-      return `"${regularInvalid.day}" icin saat araligi gecersiz.`;
+      return `"${regularInvalid.day}" için saat aralığı geçersiz.`;
     }
 
     const specialInvalid = specialDays.find((item) => item.enabled && validateTimeSelection({ start: item.start, end: item.end, field: "end", nextValue: item.end }));
     if (specialInvalid) {
-      return `"${specialInvalid.name?.trim() ? `${specialInvalid.name.trim()}` : "Özel gün"}" icin saat araligi gecersiz.`;
+      return `"${specialInvalid.name?.trim() ? `${specialInvalid.name.trim()}` : "Özel gün"}" için saat aralığı geçersiz.`;
     }
 
     return null;
@@ -651,7 +651,7 @@ export default function WorkingHours() {
 
               <View style={styles.selectedDatesInfo}>
                 <CustomText medium fontSize={12} color={Colors.LightGray2}>
-                  {Object.keys(pendingSelectedDates).length > 0 ? `${Object.keys(pendingSelectedDates).length} tarih secildi` : "Eklemek istedigin tarihlere dokun."}
+                  {Object.keys(pendingSelectedDates).length > 0 ? `${Object.keys(pendingSelectedDates).length} tarih seçildi` : "Eklemek istediğin tarihlere dokun."}
                 </CustomText>
               </View>
 
